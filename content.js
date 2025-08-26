@@ -1,11 +1,34 @@
 console.log('[Auto Commenter] Content script đã được tải (Chế độ theo dõi giao diện).');
 
-// Hàm tạo và chèn nút, không có gì thay đổi.
-const injectButton = () => {
-    // Chúng ta nhắm vào khu vực #buttons, nơi chứa nút #submit-button
+let observer; // Di chuyển observer ra ngoài để có thể quản lý nó
+
+// Đóng gói toàn bộ logic khởi tạo vào một hàm
+function initializeObserver() {
+    // Nếu đã có một observer cũ, ngắt kết nối nó trước khi tạo cái mới
+    if (observer) {
+        observer.disconnect();
+    }
+    console.log('[Auto Commenter] Khởi tạo bộ quan sát giao diện...');
+
+    observer = new MutationObserver((mutationsList) => {
+        for (const mutation of mutationsList) {
+            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                if (document.querySelector('ytd-commentbox #submit-button')) {
+                    injectButton();
+                }
+            }
+        }
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+}
+
+function injectButton() {
     const commentButtonContainer = document.querySelector("ytd-commentbox #buttons");
 
-    // Nếu không tìm thấy khu vực hoặc nút đã tồn tại, dừng lại.
     if (!commentButtonContainer || document.getElementById('auto-comment-btn-ai')) {
         return;
     }
@@ -23,7 +46,6 @@ const injectButton = () => {
         lineHeight: 'normal'
     });
     
-    // Chèn nút của chúng ta vào trước nút đầu tiên trong khu vực đó
     commentButtonContainer.prepend(ourButton);
     
     ourButton.addEventListener('click', () => {
@@ -43,24 +65,15 @@ const injectButton = () => {
     });
 };
 
-// === BỘ QUAN SÁT THAY ĐỔI TRÊN TRANG ===
-// Nó sẽ theo dõi toàn bộ trang để phát hiện khi nào các phần tử mới được thêm vào.
-const observer = new MutationObserver((mutationsList, observer) => {
-    // Lặp qua danh sách các thay đổi
-    for (const mutation of mutationsList) {
-        // Chúng ta chỉ quan tâm đến việc các node (phần tử) được thêm vào
-        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-            // Kiểm tra xem nút "Bình luận" mặc định (#submit-button) đã xuất hiện trong DOM chưa
-            if (document.querySelector('ytd-commentbox #submit-button')) {
-                // Nếu tìm thấy, hãy thử chèn nút của chúng ta
-                injectButton();
-            }
-        }
+// Lắng nghe tin nhắn từ background script
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "ytHistoryUpdated") {
+        console.log('[Content Script] Nhận được thông báo trang đã đổi. Chạy lại logic.');
+        // Khi nhận được thông báo, chạy lại hàm khởi tạo observer
+        // Thêm một độ trễ nhỏ để đảm bảo DOM của trang mới đã kịp cập nhật
+        setTimeout(initializeObserver, 500); 
     }
 });
 
-// Bắt đầu quan sát: theo dõi sự thay đổi của các phần tử con trên toàn bộ body
-observer.observe(document.body, {
-    childList: true, // Theo dõi việc thêm/xóa các phần tử con
-    subtree: true    // Theo dõi cả các phần tử con lồng sâu bên trong
-});
+// Chạy lần đầu tiên khi script được tiêm vào trang
+initializeObserver();

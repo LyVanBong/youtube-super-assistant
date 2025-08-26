@@ -6,7 +6,8 @@
   "permissions": [
     "activeTab",    
     "scripting",
-    "storage"
+    "storage",
+    "webNavigation"
   ],
   "host_permissions": [
     "https://workflow.softty.net/*"
@@ -24,7 +25,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["*://*.youtube.com/watch*"],
+      "matches": ["*://*.youtube.com/*"],
       "js": ["content.js"]
     }
   ],
