@@ -1,44 +1,38 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const commentBtn = document.getElementById('commentBtn');
+    const createCommentBtn = document.getElementById('createCommentBtn');
     const resultDiv = document.getElementById('result');
 
-    commentBtn.addEventListener('click', async () => {
+    createCommentBtn.addEventListener('click', async () => {
         resultDiv.textContent = 'Đang xử lý...';
+        createCommentBtn.disabled = true;
 
-        // 1. Lấy thông tin tab hiện tại
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        const videoUrl = tab.url;
-
-        // 2. Kiểm tra xem có phải là URL video YouTube không
-        if (!videoUrl || !videoUrl.includes("youtube.com/watch")) {
-            resultDiv.textContent = 'Lỗi: Vui lòng mở một video YouTube.';
-            return;
-        }
-
-        // 3. Gọi API để tạo bình luận
         try {
-            const apiUrl = 'https://workflow.softty.net/webhook/23105d20-3812-44c9-9906-8adf1fd5e69e';
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    url: videoUrl
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`API Lỗi: ${response.statusText}`);
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            
+            if (!tab.url || !tab.url.includes("youtube.com/watch*")) {
+                throw new Error('Vui lòng mở một video YouTube.');
             }
 
-            // 4. Lấy kết quả trả về dưới dạng TEXT và hiển thị
-            const commentText = await response.text(); // Thay đổi ở đây
-            resultDiv.innerHTML = `<strong>Bình luận đã tạo:</strong><br>${commentText}`; // Và ở đây
+            chrome.runtime.sendMessage(
+                {
+                    action: 'createComment',
+                    url: tab.url 
+                },
+                (response) => {
+                    if (chrome.runtime.lastError) {
+                        resultDiv.textContent = `Lỗi: ${chrome.runtime.lastError.message}`;
+                    } else if (response.success) {
+                        resultDiv.textContent = `Bình luận đã tạo: ${response.comment}`;
+                    } else {
+                        resultDiv.textContent = `Lỗi từ API: ${response.error}`;
+                    }
+                    createCommentBtn.disabled = false;
+                }
+            );
 
         } catch (error) {
-            console.error('Lỗi khi gọi API:', error);
-            resultDiv.textContent = `Đã xảy ra lỗi: ${error.message}`;
+            resultDiv.textContent = `Lỗi: ${error.message}`;
+            createCommentBtn.disabled = false;
         }
     });
 });

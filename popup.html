@@ -2,12 +2,12 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>YouTube Commenter</title>
+    <title>YouTube Assistant</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             width: 300px;
-            padding: 10px;
+            padding: 15px;
             text-align: center;
         }
         button {
@@ -19,6 +19,7 @@
             color: white;
             border: none;
             border-radius: 5px;
+            margin-top: 10px;
         }
         button:hover {
             background-color: #cc0000;
@@ -28,18 +29,17 @@
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 5px;
-            min-height: 50px;
+            min-height: 40px;
             text-align: left;
             word-wrap: break-word;
+            background-color: #f9f9f9;
         }
     </style>
 </head>
 <body>
-    <h3>Trình tạo bình luận YouTube</h3>
-    <button id="commentBtn">Tạo Bình Luận</button>
-    <div id="result">
-        <p>Kết quả sẽ hiển thị ở đây...</p>
-    </div>
+    <h3>Trợ lý YouTube</h3>
+    <button id="createCommentBtn">Tạo bình luận AI</button>
+    <div id="result">Kết quả sẽ hiển thị ở đây...</div>
     <script src="popup.js"></script>
 </body>
 </html>

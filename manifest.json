@@ -1,16 +1,17 @@
 {
   "manifest_version": 3,
-  "name": "YouTube Super Commenter",
-  "version": "3.9",
-  "description": "Tạo bình luận từ popup hoặc trực tiếp trên trang YouTube.",
+  "name": "YouTube Super Assistant",
+  "version": "5.0",
+  "description": "Trợ lý tự động cho YouTube: tạo bình luận, trả lời, cuộn trang và hơn thế nữa.",
   "permissions": [
-    "activeTab",    
     "scripting",
-    "storage",
-    "webNavigation"
+    "activeTab",
+    "webNavigation",
+    "storage"
   ],
   "host_permissions": [
-    "https://workflow.softty.net/*"
+    "https://workflow.softty.net/*",
+    "*://*.youtube.com/*"
   ],
   "action": {
     "default_popup": "popup.html",
@@ -25,8 +26,12 @@
   },
   "content_scripts": [
     {
-      "matches": ["*://*.youtube.com/*"],
-      "js": ["content.js"]
+      "matches": [
+        "*://*.youtube.com/*"
+      ],
+      "js": [
+        "content.js"
+      ]
     }
   ],
   "icons": {
