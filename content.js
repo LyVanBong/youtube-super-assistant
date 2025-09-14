@@ -28,7 +28,6 @@ function getVideoTimestamp() {
     return '00:00'; // Giá trị mặc định
 }
 
-
 function scrollToElement(selector) {
     return new Promise((resolve, reject) => {
         const element = document.querySelector(selector);
@@ -125,13 +124,32 @@ async function setupVideoProgressListener() {
     try {
         const video = await waitForElement('video.html5-main-video', 10000);
         chrome.storage.sync.get('isAutoCommentEnabled', (data) => {
-            if (data.isAutoCommentEnabled === false) return;
+            if (data.isAutoCommentEnabled === false) {
+                console.log('[Auto Commenter] Tự động bình luận đang tắt.');
+                return;
+            }
             progressCheckInterval = setInterval(() => {
                 if (video && video.duration && !automationHasRun) {
                     if ((video.currentTime / video.duration) >= 0.80) {
                         automationHasRun = true;
                         clearInterval(progressCheckInterval);
-                        runFullAutomation(currentVideoId);
+
+                        // Gửi tin nhắn để kiểm tra lịch sử trước khi hành động
+                        chrome.runtime.sendMessage({ action: 'isVideoInHistory', videoId: currentVideoId }, (response) => {
+                            if (chrome.runtime.lastError) {
+                                console.error(`Lỗi khi kiểm tra lịch sử: ${chrome.runtime.lastError.message}`);
+                                // Nếu có lỗi, vẫn cho chạy để không ảnh hưởng tính năng chính
+                                runFullAutomation(currentVideoId);
+                                return;
+                            }
+                            // Dựa vào kết quả trả về để quyết định
+                            if (response && response.isInHistory) {
+                                console.log('[Auto Commenter] Video đã có trong lịch sử. Bỏ qua tự động bình luận.');
+                            } else {
+                                console.log('[Auto Commenter] Video chưa có trong lịch sử. Bắt đầu chuỗi tự động.');
+                                runFullAutomation(currentVideoId);
+                            }
+                        });
                     }
                 }
             }, 5000);
@@ -163,7 +181,11 @@ function createOrUpdateFloatingButtons() {
             scrollToCommentBtn.innerText = '💬';
             scrollToCommentBtn.title = 'Cuộn và Focus vào bình luận';
             Object.assign(scrollToCommentBtn.style, buttonStyles);
-            scrollToCommentBtn.addEventListener('click', () => { /* ... */ });
+            scrollToCommentBtn.addEventListener('click', () => {
+                scrollToElement('ytd-comments#comments').then(() => {
+                    document.querySelector('ytd-comment-simplebox-renderer #placeholder-area')?.click();
+                }).catch(console.error);
+             });
             scrollToCommentBtn.onmouseover = () => { scrollToCommentBtn.style.transform = 'scale(1.1)'; };
             scrollToCommentBtn.onmouseout = () => { scrollToCommentBtn.style.transform = 'scale(1.0)'; };
             const autoToggleButton = document.createElement('button');
@@ -181,7 +203,13 @@ function createOrUpdateFloatingButtons() {
                     const newIsEnabled = !(data.isAutoCommentEnabled !== false);
                     chrome.storage.sync.set({ isAutoCommentEnabled: newIsEnabled }, () => {
                         updateToggleButtonUI(newIsEnabled);
-                        setupVideoProgressListener();
+                        // Khởi động lại bộ theo dõi nếu bật, hoặc xóa nếu tắt
+                        if (newIsEnabled) {
+                            automationHasRun = false; // Reset lại để có thể chạy lại nếu cần
+                            setupVideoProgressListener();
+                        } else {
+                            if (progressCheckInterval) clearInterval(progressCheckInterval);
+                        }
                     });
                 });
             });
@@ -197,6 +225,7 @@ function createOrUpdateFloatingButtons() {
         if (container) container.style.display = 'none';
     }
 }
+
 function injectAICommentButton() {
     const mainCommentBox = document.querySelector("ytd-commentbox #buttons");
     if (!mainCommentBox || mainCommentBox.querySelector('.ai-comment-btn')) { return; }
@@ -217,10 +246,11 @@ function injectAICommentButton() {
                     commentBox.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
                 }
             })
-            .catch(error => alert(`Lỗi: ${error}`))
+            .catch(error => alert(`Lỗi: ${error.message}`))
             .finally(() => { aiButton.innerText = 'Bình luận AI'; aiButton.disabled = false; });
     });
 }
+
 function injectAIReplyButtons() {
     const replyBoxes = document.querySelectorAll("ytd-comment-reply-dialog-renderer");
     replyBoxes.forEach(replyBox => {
@@ -248,7 +278,7 @@ function injectAIReplyButtons() {
                         replyInput.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
                     }
                 })
-                .catch(error => alert(`Lỗi: ${error}`))
+                .catch(error => alert(`Lỗi: ${error.message}`))
                 .finally(() => { aiReplyBtn.innerText = 'Phản hồi AI'; aiReplyBtn.disabled = false; });
         });
     });
@@ -284,4 +314,3 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Chạy lần đầu
 initialize();
-
