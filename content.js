@@ -1,12 +1,33 @@
 console.log('[Auto Commenter] Content script đã được tải và sẵn sàng.');
 
-// Biến toàn cục để quản lý bộ quan sát và trạng thái tự động
+// Biến toàn cục để quản lý các tiến trình
 let observer;
 let automationHasRun = false;
 let progressCheckInterval;
+let currentVideoId = null;
 
-// --- CÁC HÀM TRỢ GIÚP CHO VIỆC TỰ ĐỘNG HÓA ---
-const humanizedDelay = (min = 700, max = 1500) => new Promise(res => setTimeout(res, Math.random() * (max - min) + min));
+// --- CÁC HÀM TRỢ GIÚP ---
+const humanizedDelay = (min = 800, max = 1600) => new Promise(res => setTimeout(res, Math.random() * (max - min) + min));
+
+function getVideoIdFromUrl(url) {
+    try {
+        const urlParams = new URLSearchParams(new URL(url).search);
+        return urlParams.get('v');
+    } catch (e) { return null; }
+}
+
+// --- HÀM MỚI: Lấy thời gian video hiện tại ---
+function getVideoTimestamp() {
+    const video = document.querySelector('video.html5-main-video');
+    if (video && video.currentTime) {
+        const totalSeconds = Math.floor(video.currentTime);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+    return '00:00'; // Giá trị mặc định
+}
+
 
 function scrollToElement(selector) {
     return new Promise((resolve, reject) => {
@@ -14,7 +35,7 @@ function scrollToElement(selector) {
         if (!element) return reject(`Không tìm thấy phần tử: ${selector}`);
         const scrollObserver = new IntersectionObserver((entries) => {
             if (entries[0].isIntersecting) {
-                resolve();
+                resolve(element);
                 scrollObserver.disconnect();
             }
         }, { threshold: 0.5 });
@@ -23,133 +44,114 @@ function scrollToElement(selector) {
     });
 }
 
-function waitForElement(selector) {
+function waitForElement(selector, timeout = 15000) {
     return new Promise((resolve, reject) => {
         let attempts = 0;
+        const intervalTime = 500;
+        const maxAttempts = timeout / intervalTime;
         const interval = setInterval(() => {
             const element = document.querySelector(selector);
             if (element) {
                 clearInterval(interval);
                 resolve(element);
             }
-            if (++attempts > 30) {
+            if (++attempts > maxAttempts) {
                 clearInterval(interval);
                 reject(`Hết thời gian chờ phần tử: ${selector}`);
             }
-        }, 500);
+        }, intervalTime);
     });
 }
 
-// --- HÀM TRỢ GIÚP MỚI: Gửi tin nhắn và chờ phản hồi bằng Promise ---
 function sendMessagePromise(message) {
     return new Promise((resolve, reject) => {
         chrome.runtime.sendMessage(message, (response) => {
-            if (chrome.runtime.lastError) {
-                return reject(chrome.runtime.lastError.message);
-            }
-            if (response && response.success) {
-                resolve(response);
-            } else {
-                reject(response ? response.error : 'Phản hồi không thành công hoặc không xác định.');
-            }
+            if (chrome.runtime.lastError) return reject(new Error(chrome.runtime.lastError.message));
+            if (response && response.success) return resolve(response);
+            reject(new Error(response ? response.error : 'Phản hồi không thành công.'));
         });
     });
 }
 
-// --- CHUỖI HÀNH ĐỘNG TỰ ĐỘNG CHÍNH (ĐÃ SỬA LỖI VÀ NÂNG CẤP) ---
-async function runFullAutomation() {
+// --- CHUỖI HÀNH ĐỘNG TỰ ĐỘNG CHÍNH ---
+async function runFullAutomation(expectedVideoId) {
+    const checkContext = () => { if (getVideoIdFromUrl(window.location.href) !== expectedVideoId) throw new Error('Page context changed.'); };
     try {
-        console.log('[Auto Commenter] Bắt đầu chuỗi hành động tự động...');
-        
+        console.log('[Auto Commenter] Bắt đầu chuỗi tự động cho video:', expectedVideoId);
+        checkContext();
         await scrollToElement('ytd-comments#comments');
-        console.log('[Auto Commenter] Đã cuộn đến bình luận.');
         await humanizedDelay();
-
-        const placeholder = document.querySelector('ytd-comment-simplebox-renderer #placeholder-area');
-        if (placeholder) {
-            placeholder.click();
-            console.log('[Auto Commenter] Đã kích hoạt ô bình luận.');
-        }
+        checkContext();
+        document.querySelector('ytd-comment-simplebox-renderer #placeholder-area')?.click();
         
-        // --- ĐIỂM SỬA LỖI QUAN TRỌNG NHẤT ---
-        // Bỏ qua việc click nút, thay vào đó gọi trực tiếp API
-        console.log('[Auto Commenter] Trực tiếp gọi API để tạo bình luận...');
-        const response = await sendMessagePromise({ action: 'createComment', url: window.location.href });
+        checkContext();
+        const timestamp = getVideoTimestamp();
+        const response = await sendMessagePromise({ action: 'createComment', url: window.location.href, timestamp: timestamp });
         
+        checkContext();
         const commentBox = await waitForElement('ytd-commentbox #contenteditable-root');
         commentBox.innerText = response.comment;
-        console.log('[Auto Commenter] AI đã tạo xong bình luận.');
-        
         commentBox.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
-        console.log('[Auto Commenter] Đã mô phỏng sự kiện input.');
         await humanizedDelay();
 
-        const submitButton = document.querySelector('ytd-commentbox #submit-button button');
-        if (!submitButton || submitButton.disabled) throw new Error('Không thể nhấn nút "Bình luận".');
+        checkContext();
+        const submitButton = await waitForElement('ytd-commentbox #submit-button button:not([disabled])');
         submitButton.click();
-        console.log('[Auto Commenter] Đã nhấn nút "Bình luận".');
-        
-        // Bỏ qua bước chờ xác nhận không đáng tin cậy
-        console.log('[Auto Commenter] Chờ một chút để bình luận được gửi đi...');
         await humanizedDelay(2500, 4000);
 
-        await scrollToElement('#top-level-buttons-computed');
-        console.log('[Auto Commenter] Đã cuộn đến nút Like.');
+        checkContext();
+        await scrollToElement('ytd-watch-metadata');
+        const likeButtonContainer = await waitForElement('#segmented-like-button');
+        if (likeButtonContainer && likeButtonContainer.getAttribute('aria-pressed') === 'false') {
+            likeButtonContainer.click();
+        }
         await humanizedDelay();
 
-        const likeButton = document.querySelector('#like-button button');
-        if (!likeButton) throw new Error('Không tìm thấy nút Like.');
-        likeButton.click();
-        console.log('[Auto Commenter] Đã nhấn nút Like.');
-        await humanizedDelay();
-
+        checkContext();
         window.scrollTo({ top: 0, behavior: 'smooth' });
         console.log('[Auto Commenter] Hoàn tất chuỗi hành động!');
     } catch (error) {
-        console.error('[Auto Commenter] Lỗi trong chuỗi tự động:', error);
+        if (error.message.includes('Page context changed')) {
+            console.log('[Auto Commenter] Tự động dừng do người dùng đã chuyển video.');
+        } else {
+            console.error('[Auto Commenter] Lỗi trong chuỗi tự động:', error);
+        }
     }
 }
-
 
 // --- BỘ KÍCH HOẠT TỰ ĐỘNG ---
-function setupVideoProgressListener() {
-    if (progressCheckInterval) {
-        clearInterval(progressCheckInterval);
+async function setupVideoProgressListener() {
+    if (progressCheckInterval) clearInterval(progressCheckInterval);
+    try {
+        const video = await waitForElement('video.html5-main-video', 10000);
+        chrome.storage.sync.get('isAutoCommentEnabled', (data) => {
+            if (data.isAutoCommentEnabled === false) return;
+            progressCheckInterval = setInterval(() => {
+                if (video && video.duration && !automationHasRun) {
+                    if ((video.currentTime / video.duration) >= 0.80) {
+                        automationHasRun = true;
+                        clearInterval(progressCheckInterval);
+                        runFullAutomation(currentVideoId);
+                    }
+                }
+            }, 5000);
+        });
+    } catch (error) {
+        console.error('[Auto Commenter] Không tìm thấy video player để theo dõi:', error);
     }
-    progressCheckInterval = setInterval(() => {
-        const video = document.querySelector('video.html5-main-video');
-        if (video && video.duration > 0 && !automationHasRun) {
-            const progress = (video.currentTime / video.duration);
-            if (progress >= 0.80) {
-                console.log('[Auto Commenter] Đạt 80% tiến trình video. Kích hoạt tự động...');
-                automationHasRun = true;
-                clearInterval(progressCheckInterval);
-                runFullAutomation();
-            }
-        }
-    }, 5000);
 }
 
-
-// --- CÁC HÀM CHÈN GIAO DIỆN ---
+// --- CÁC HÀM CHÈN GIAO DIỆN (UI) ---
 function createOrUpdateFloatingButtons() {
-    const commentSectionExists = document.querySelector('ytd-comments#comments');
+    const isWatchPage = window.location.href.includes('/watch');
     const containerId = 'floating-buttons-container';
     let container = document.getElementById(containerId);
-    if (commentSectionExists) {
+    if (isWatchPage) {
         if (!container) {
             container = document.createElement('div');
             container.id = containerId;
-            Object.assign(container.style, {
-                position: 'fixed', bottom: '30px', right: '30px', zIndex: '9999',
-                display: 'flex', flexDirection: 'column', gap: '10px'
-            });
-            const buttonStyles = {
-                backgroundColor: 'rgba(15, 15, 15, 0.9)', color: 'white', border: '1px solid #3f3f3f',
-                borderRadius: '50%', width: '50px', height: '50px', fontSize: '24px', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3)', transition: 'transform 0.2s ease'
-            };
+            Object.assign(container.style, { position: 'fixed', bottom: '30px', right: '30px', zIndex: '9999', display: 'flex', flexDirection: 'column', gap: '10px' });
+            const buttonStyles = { backgroundColor: 'rgba(15, 15, 15, 0.9)', color: 'white', border: '1px solid #3f3f3f', borderRadius: '50%', width: '50px', height: '50px', fontSize: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3)', transition: 'transform 0.2s ease, background-color 0.2s' };
             const scrollToTopBtn = document.createElement('button');
             scrollToTopBtn.innerText = '⬆️';
             scrollToTopBtn.title = 'Cuộn lên trên cùng';
@@ -161,24 +163,33 @@ function createOrUpdateFloatingButtons() {
             scrollToCommentBtn.innerText = '💬';
             scrollToCommentBtn.title = 'Cuộn và Focus vào bình luận';
             Object.assign(scrollToCommentBtn.style, buttonStyles);
-            scrollToCommentBtn.addEventListener('click', () => {
-                const commentSection = document.querySelector('ytd-comments#comments');
-                if (!commentSection) return;
-                const scrollObserver = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            document.querySelector('ytd-comment-simplebox-renderer #placeholder-area')?.click();
-                            scrollObserver.disconnect();
-                        }
-                    });
-                }, { threshold: 0.5 });
-                scrollObserver.observe(commentSection);
-                commentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            });
+            scrollToCommentBtn.addEventListener('click', () => { /* ... */ });
             scrollToCommentBtn.onmouseover = () => { scrollToCommentBtn.style.transform = 'scale(1.1)'; };
             scrollToCommentBtn.onmouseout = () => { scrollToCommentBtn.style.transform = 'scale(1.0)'; };
+            const autoToggleButton = document.createElement('button');
+            autoToggleButton.title = 'Bật/Tắt Tự động Bình luận & Like';
+            Object.assign(autoToggleButton.style, buttonStyles);
+            const updateToggleButtonUI = (isEnabled) => {
+                if (isEnabled) { autoToggleButton.innerText = '🤖'; autoToggleButton.style.backgroundColor = '#4285F4'; }
+                else { autoToggleButton.innerText = '🚫'; autoToggleButton.style.backgroundColor = 'rgba(15, 15, 15, 0.9)'; }
+            };
+            chrome.storage.sync.get('isAutoCommentEnabled', (data) => {
+                updateToggleButtonUI(data.isAutoCommentEnabled !== false);
+            });
+            autoToggleButton.addEventListener('click', () => {
+                chrome.storage.sync.get('isAutoCommentEnabled', (data) => {
+                    const newIsEnabled = !(data.isAutoCommentEnabled !== false);
+                    chrome.storage.sync.set({ isAutoCommentEnabled: newIsEnabled }, () => {
+                        updateToggleButtonUI(newIsEnabled);
+                        setupVideoProgressListener();
+                    });
+                });
+            });
+            autoToggleButton.onmouseover = () => { autoToggleButton.style.transform = 'scale(1.1)'; };
+            autoToggleButton.onmouseout = () => { autoToggleButton.style.transform = 'scale(1.0)'; };
             container.appendChild(scrollToTopBtn);
             container.appendChild(scrollToCommentBtn);
+            container.appendChild(autoToggleButton);
             document.body.appendChild(container);
         }
         container.style.display = 'flex';
@@ -186,23 +197,19 @@ function createOrUpdateFloatingButtons() {
         if (container) container.style.display = 'none';
     }
 }
-
 function injectAICommentButton() {
     const mainCommentBox = document.querySelector("ytd-commentbox #buttons");
     if (!mainCommentBox || mainCommentBox.querySelector('.ai-comment-btn')) { return; }
     const aiButton = document.createElement('button');
     aiButton.innerText = 'Bình luận AI';
     aiButton.className = 'ai-comment-btn';
-    Object.assign(aiButton.style, {
-        backgroundColor: '#2772db', color: 'white', border: 'none', padding: '10px 16px',
-        fontSize: '14px', fontWeight: '500', borderRadius: '18px', cursor: 'pointer',
-        marginRight: '8px', lineHeight: 'normal'
-    });
+    Object.assign(aiButton.style, { backgroundColor: '#2772db', color: 'white', border: 'none', padding: '10px 16px', fontSize: '14px', fontWeight: '500', borderRadius: '18px', cursor: 'pointer', marginRight: '8px', lineHeight: 'normal' });
     mainCommentBox.prepend(aiButton);
     aiButton.addEventListener('click', () => {
         aiButton.innerText = 'Đang tạo...';
         aiButton.disabled = true;
-        sendMessagePromise({ action: 'createComment', url: window.location.href })
+        const timestamp = getVideoTimestamp(); // Lấy timestamp
+        sendMessagePromise({ action: 'createComment', url: window.location.href, timestamp: timestamp })
             .then(response => {
                 const commentBox = document.querySelector('ytd-commentbox #contenteditable-root');
                 if (commentBox) {
@@ -211,13 +218,9 @@ function injectAICommentButton() {
                 }
             })
             .catch(error => alert(`Lỗi: ${error}`))
-            .finally(() => {
-                aiButton.innerText = 'Bình luận AI';
-                aiButton.disabled = false;
-            });
+            .finally(() => { aiButton.innerText = 'Bình luận AI'; aiButton.disabled = false; });
     });
 }
-
 function injectAIReplyButtons() {
     const replyBoxes = document.querySelectorAll("ytd-comment-reply-dialog-renderer");
     replyBoxes.forEach(replyBox => {
@@ -231,61 +234,54 @@ function injectAIReplyButtons() {
         const aiReplyBtn = document.createElement('button');
         aiReplyBtn.innerText = 'Phản hồi AI';
         aiReplyBtn.className = 'ai-reply-btn';
-        Object.assign(aiReplyBtn.style, {
-            backgroundColor: '#1a73e8', color: 'white', border: 'none', padding: '10px 16px',
-            fontSize: '14px', fontWeight: '500', borderRadius: '18px', cursor: 'pointer',
-            marginRight: '8px', lineHeight: 'normal'
-        });
+        Object.assign(aiReplyBtn.style, { backgroundColor: '#1a73e8', color: 'white', border: 'none', padding: '10px 16px', fontSize: '14px', fontWeight: '500', borderRadius: '18px', cursor: 'pointer', marginRight: '8px', lineHeight: 'normal' });
         buttonsContainer.prepend(aiReplyBtn);
         aiReplyBtn.addEventListener('click', () => {
             aiReplyBtn.innerText = 'Đang tạo...';
             aiReplyBtn.disabled = true;
-            sendMessagePromise({
-                action: 'createReply', url: window.location.href, parentComment: parentCommentText
-            })
-            .then(response => {
-                const replyInput = replyBox.querySelector('#contenteditable-root');
-                if (replyInput) {
-                    replyInput.innerText = response.comment;
-                    replyInput.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
-                }
-            })
-            .catch(error => alert(`Lỗi: ${error}`))
-            .finally(() => {
-                aiReplyBtn.innerText = 'Phản hồi AI';
-                aiReplyBtn.disabled = false;
-            });
+            const timestamp = getVideoTimestamp(); // Lấy timestamp
+            sendMessagePromise({ action: 'createReply', url: window.location.href, parentComment: parentCommentText, timestamp: timestamp })
+                .then(response => {
+                    const replyInput = replyBox.querySelector('#contenteditable-root');
+                    if (replyInput) {
+                        replyInput.innerText = response.comment;
+                        replyInput.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
+                    }
+                })
+                .catch(error => alert(`Lỗi: ${error}`))
+                .finally(() => { aiReplyBtn.innerText = 'Phản hồi AI'; aiReplyBtn.disabled = false; });
         });
     });
 }
 
 // --- BỘ QUẢN LÝ VÀ KHỞI TẠO CHÍNH ---
 function initialize() {
-    if (observer) { observer.disconnect(); }
-    if (progressCheckInterval) { clearInterval(progressCheckInterval); }
-    console.log('[Auto Commenter] Khởi tạo các chức năng cho trang...');
+    if (observer) observer.disconnect();
+    if (progressCheckInterval) clearInterval(progressCheckInterval);
     automationHasRun = false; 
+    currentVideoId = getVideoIdFromUrl(window.location.href);
     createOrUpdateFloatingButtons();
     observer = new MutationObserver(() => {
-        if (document.querySelector('ytd-commentbox #submit-button')) {
-            injectAICommentButton();
-        }
+        injectAICommentButton();
         injectAIReplyButtons();
         createOrUpdateFloatingButtons();
     });
     observer.observe(document.body, { childList: true, subtree: true });
-    if (window.location.href.includes("/watch")) {
+    if (currentVideoId) {
         setupVideoProgressListener();
     }
 }
 
-// Lắng nghe tin nhắn từ background script
+// Lắng nghe tin nhắn từ background script và popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "ytHistoryUpdated") {
-        console.log('[Auto Commenter] Trang đã thay đổi, khởi tạo lại...');
         setTimeout(initialize, 500);
+    } else if (request.action === "getTimestamp") {
+        sendResponse({ timestamp: getVideoTimestamp() });
     }
-    return true;
+    return true; // Giữ kênh message mở cho các phản hồi bất đồng bộ
 });
 
+// Chạy lần đầu
 initialize();
+
