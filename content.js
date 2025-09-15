@@ -129,20 +129,22 @@ async function setupVideoProgressListener() {
             }
 
             progressCheckInterval = setInterval(() => {
-                // --- LOGIC MỚI: KIỂM TRA QUẢNG CÁO ---
+                // --- LOGIC KIỂM TRA QUẢNG CÁO ĐÃ SỬA LỖI ---
                 const adModule = document.querySelector('.video-ads.ytp-ad-module');
                 if (adModule && adModule.childElementCount > 0) {
-                    console.log('[Auto Commenter] Phát hiện quảng cáo, tạm dừng đếm thời gian.');
+                    // Sử dụng selector linh hoạt hơn để tìm nhiều loại nút "bỏ qua"
+                    const skipButton = document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button');
                     
-                    // Kiểm tra và click nút bỏ qua quảng cáo
-                    const skipButton = document.getElementById('skip-ad:1') || document.querySelector('.ytp-ad-skip-button-modern');
-                    if (skipButton) {
-                        console.log('[Auto Commenter] Tự động bỏ qua quảng cáo.');
+                    // Kiểm tra xem nút có thực sự hiển thị trên màn hình không trước khi click
+                    if (skipButton && skipButton.offsetParent !== null) {
+                        console.log('[Auto Commenter] Phát hiện và tự động bỏ qua quảng cáo.');
                         skipButton.click();
+                    } else {
+                        console.log('[Auto Commenter] Phát hiện quảng cáo, tạm dừng đếm thời gian.');
                     }
                     return; // Dừng, không kiểm tra tiến độ video
                 }
-                // --- KẾT THÚC LOGIC MỚI ---
+                // --- KẾT THÚC SỬA LỖI ---
 
                 if (video && video.duration && !automationHasRun) {
                     if ((video.currentTime / video.duration) >= 0.80) {
@@ -164,7 +166,7 @@ async function setupVideoProgressListener() {
                         });
                     }
                 }
-            }, 3000); // Giảm tần suất kiểm tra một chút
+            }, 3000);
         });
     } catch (error) {
         console.error('[Auto Commenter] Không tìm thấy video player để theo dõi:', error);
