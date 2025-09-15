@@ -71,7 +71,7 @@ function sendMessagePromise(message) {
     });
 }
 
-// --- CHUỖI HÀNH ĐỘNG TỰ ĐỘNG CHÍNH ---
+// --- CHUỖI HÀNH ĐỘNG TỰ ĐỘNG CHÍNH (ĐÃ CẬP NHẬT) ---
 async function runFullAutomation(expectedVideoId) {
     const checkContext = () => { if (getVideoIdFromUrl(window.location.href) !== expectedVideoId) throw new Error('Page context changed.'); };
     try {
@@ -81,11 +81,11 @@ async function runFullAutomation(expectedVideoId) {
         await humanizedDelay();
         checkContext();
         document.querySelector('ytd-comment-simplebox-renderer #placeholder-area')?.click();
-        
+
         checkContext();
         const timestamp = getVideoTimestamp();
         const response = await sendMessagePromise({ action: 'createComment', url: window.location.href, timestamp: timestamp });
-        
+
         checkContext();
         const commentBox = await waitForElement('ytd-commentbox #contenteditable-root');
         commentBox.innerText = response.comment;
@@ -97,16 +97,18 @@ async function runFullAutomation(expectedVideoId) {
         submitButton.click();
         await humanizedDelay(2500, 4000);
 
-        checkContext();
-        await scrollToElement('ytd-watch-metadata');
-        const likeButtonContainer = await waitForElement('#segmented-like-button');
-        if (likeButtonContainer && likeButtonContainer.getAttribute('aria-pressed') === 'false') {
-            likeButtonContainer.click();
-        }
-        await humanizedDelay();
+        // --- PHẦN TỰ ĐỘNG LIKE ĐÃ BỊ XÓA ---
+        // checkContext();
+        // await scrollToElement('ytd-watch-metadata');
+        // const likeButtonContainer = await waitForElement('#segmented-like-button');
+        // if (likeButtonContainer && likeButtonContainer.getAttribute('aria-pressed') === 'false') {
+        //     likeButtonContainer.click();
+        // }
+        // await humanizedDelay();
+        // --- KẾT THÚC PHẦN BỊ XÓA ---
 
         checkContext();
-        await scrollToElement('ytd-watch-metadata', 'start');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         console.log('[Auto Commenter] Hoàn tất chuỗi hành động!');
     } catch (error) {
         if (error.message.includes('Page context changed')) {
@@ -117,7 +119,7 @@ async function runFullAutomation(expectedVideoId) {
     }
 }
 
-// --- BỘ KÍCH HOẠT TỰ ĐỘNG (ĐÃ CẬP NHẬT) ---
+// --- BỘ KÍCH HOẠT TỰ ĐỘNG ---
 async function setupVideoProgressListener() {
     if (progressCheckInterval) clearInterval(progressCheckInterval);
     try {
@@ -129,22 +131,29 @@ async function setupVideoProgressListener() {
             }
 
             progressCheckInterval = setInterval(() => {
-                // --- LOGIC KIỂM TRA QUẢNG CÁO ĐÃ SỬA LỖI ---
                 const adModule = document.querySelector('.video-ads.ytp-ad-module');
                 if (adModule && adModule.childElementCount > 0) {
-                    // Sử dụng selector linh hoạt hơn để tìm nhiều loại nút "bỏ qua"
-                    const skipButton = document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button');
-                    
-                    // Kiểm tra xem nút có thực sự hiển thị trên màn hình không trước khi click
-                    if (skipButton && skipButton.offsetParent !== null) {
-                        console.log('[Auto Commenter] Phát hiện và tự động bỏ qua quảng cáo.');
-                        skipButton.click();
-                    } else {
-                        console.log('[Auto Commenter] Phát hiện quảng cáo, tạm dừng đếm thời gian.');
+                    const possibleButtons = document.querySelectorAll('.ytp-ad-skip-button-container, .ytp-ad-skip-button, button');
+                    let foundAndClicked = false;
+
+                    possibleButtons.forEach(button => {
+                        const buttonText = (button.innerText || button.textContent || button.getAttribute('aria-label') || '').toLowerCase();
+
+                        if (buttonText.includes('Skip') || buttonText.includes('Bỏ qua')) {
+                            if (button.offsetParent !== null) {
+                                console.log('[Auto Commenter] Phát hiện và tự động click nút bỏ qua quảng cáo.');
+                                button.click();
+                                foundAndClicked = true;
+                            }
+                        }
+                    });
+
+                    if (!foundAndClicked) {
+                        console.log('[Auto Commenter] Phát hiện quảng cáo, đang chờ nút bỏ qua...');
                     }
-                    return; // Dừng, không kiểm tra tiến độ video
+
+                    return;
                 }
-                // --- KẾT THÚC SỬA LỖI ---
 
                 if (video && video.duration && !automationHasRun) {
                     if ((video.currentTime / video.duration) >= 0.80) {
@@ -184,7 +193,7 @@ function createOrUpdateFloatingButtons() {
             container.id = containerId;
             Object.assign(container.style, { position: 'fixed', bottom: '30px', right: '30px', zIndex: '9999', display: 'flex', flexDirection: 'column', gap: '10px' });
             const buttonStyles = { backgroundColor: 'rgba(15, 15, 15, 0.9)', color: 'white', border: '1px solid #3f3f3f', borderRadius: '50%', width: '50px', height: '50px', fontSize: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3)', transition: 'transform 0.2s ease, background-color 0.2s' };
-            
+
             const scrollToTopBtn = document.createElement('button');
             scrollToTopBtn.innerText = '⬆️';
             scrollToTopBtn.title = 'Cuộn lên trên cùng';
@@ -192,7 +201,7 @@ function createOrUpdateFloatingButtons() {
             scrollToTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
             scrollToTopBtn.onmouseover = () => { scrollToTopBtn.style.transform = 'scale(1.1)'; };
             scrollToTopBtn.onmouseout = () => { scrollToTopBtn.style.transform = 'scale(1.0)'; };
-            
+
             const scrollToCommentBtn = document.createElement('button');
             scrollToCommentBtn.innerText = '💬';
             scrollToCommentBtn.title = 'Cuộn và Focus vào bình luận';
@@ -210,9 +219,9 @@ function createOrUpdateFloatingButtons() {
             });
             scrollToCommentBtn.onmouseover = () => { scrollToCommentBtn.style.transform = 'scale(1.1)'; };
             scrollToCommentBtn.onmouseout = () => { scrollToCommentBtn.style.transform = 'scale(1.0)'; };
-            
+
             const autoToggleButton = document.createElement('button');
-            autoToggleButton.title = 'Bật/Tắt Tự động Bình luận & Like';
+            autoToggleButton.title = 'Bật/Tắt Tự động Bình luận'; // Sửa lại title
             Object.assign(autoToggleButton.style, buttonStyles);
             const updateToggleButtonUI = (isEnabled) => {
                 if (isEnabled) { autoToggleButton.innerText = '🤖'; autoToggleButton.style.backgroundColor = '#4285F4'; }
@@ -227,7 +236,7 @@ function createOrUpdateFloatingButtons() {
                     chrome.storage.sync.set({ isAutoCommentEnabled: newIsEnabled }, () => {
                         updateToggleButtonUI(newIsEnabled);
                         if (newIsEnabled) {
-                            automationHasRun = false; 
+                            automationHasRun = false;
                             setupVideoProgressListener();
                         } else {
                             if (progressCheckInterval) clearInterval(progressCheckInterval);
@@ -260,7 +269,7 @@ function injectAICommentButton() {
     aiButton.addEventListener('click', () => {
         aiButton.innerText = 'Đang tạo...';
         aiButton.disabled = true;
-        const timestamp = getVideoTimestamp(); 
+        const timestamp = getVideoTimestamp();
         sendMessagePromise({ action: 'createComment', url: window.location.href, timestamp: timestamp })
             .then(response => {
                 const commentBox = document.querySelector('ytd-commentbox #contenteditable-root');
@@ -311,7 +320,7 @@ function injectAIReplyButtons() {
 function initialize() {
     if (observer) observer.disconnect();
     if (progressCheckInterval) clearInterval(progressCheckInterval);
-    automationHasRun = false; 
+    automationHasRun = false;
     currentVideoId = getVideoIdFromUrl(window.location.href);
     createOrUpdateFloatingButtons();
     observer = new MutationObserver(() => {
