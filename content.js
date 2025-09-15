@@ -27,7 +27,7 @@ function getVideoTimestamp() {
     return '00:00'; // Giá trị mặc định
 }
 
-function scrollToElement(selector) {
+function scrollToElement(selector, blockOption = 'center') {
     return new Promise((resolve, reject) => {
         const element = document.querySelector(selector);
         if (!element) return reject(`Không tìm thấy phần tử: ${selector}`);
@@ -38,7 +38,7 @@ function scrollToElement(selector) {
             }
         }, { threshold: 0.5 });
         scrollObserver.observe(element);
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        element.scrollIntoView({ behavior: 'smooth', block: blockOption });
     });
 }
 
@@ -106,7 +106,10 @@ async function runFullAutomation(expectedVideoId) {
         await humanizedDelay();
 
         checkContext();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // --- SỬA LỖI TẠI ĐÂY ---
+        // Sử dụng lại hàm scrollToElement để cuộn lên đáng tin cậy hơn
+        await scrollToElement('ytd-watch-metadata', 'start');
+        // --- KẾT THÚC SỬA LỖI ---
         console.log('[Auto Commenter] Hoàn tất chuỗi hành động!');
     } catch (error) {
         if (error.message.includes('Page context changed')) {
@@ -179,22 +182,17 @@ function createOrUpdateFloatingButtons() {
             scrollToCommentBtn.innerText = '💬';
             scrollToCommentBtn.title = 'Cuộn và Focus vào bình luận';
             Object.assign(scrollToCommentBtn.style, buttonStyles);
-            // --- SỬA LỖI TẠI ĐÂY ---
             scrollToCommentBtn.addEventListener('click', () => {
                 const commentsElement = document.querySelector('ytd-comments#comments');
                 if (commentsElement) {
-                    // Cuộn để đầu của khu vực bình luận ở trên cùng màn hình
                     commentsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-                    // Sau một khoảng trễ ngắn để cuộn, click vào ô bình luận
                     setTimeout(() => {
                         document.querySelector('ytd-comment-simplebox-renderer #placeholder-area')?.click();
-                    }, 500); // 500ms delay
+                    }, 500);
                 } else {
                     console.error('[Auto Commenter] Không tìm thấy khu vực bình luận để cuộn tới.');
                 }
             });
-            // --- KẾT THÚC SỬA LỖI ---
             scrollToCommentBtn.onmouseover = () => { scrollToCommentBtn.style.transform = 'scale(1.1)'; };
             scrollToCommentBtn.onmouseout = () => { scrollToCommentBtn.style.transform = 'scale(1.0)'; };
             
@@ -272,25 +270,25 @@ function injectAIReplyButtons() {
         if (!parentCommentTextElement) return;
         const parentCommentText = parentCommentTextElement.innerText;
         const aiReplyBtn = document.createElement('button');
-aiReplyBtn.innerText = 'Phản hồi AI';
-aiReplyBtn.className = 'ai-reply-btn';
-Object.assign(aiReplyBtn.style, { backgroundColor: '#1a73e8', color: 'white', border: 'none', padding: '10px 16px', fontSize: '14px', fontWeight: '500', borderRadius: '18px', cursor: 'pointer', marginRight: '8px', lineHeight: 'normal' });
-buttonsContainer.prepend(aiReplyBtn);
-aiReplyBtn.addEventListener('click', () => {
-aiReplyBtn.innerText = 'Đang tạo...';
-aiReplyBtn.disabled = true;
-const timestamp = getVideoTimestamp();
-sendMessagePromise({ action: 'createReply', url: window.location.href, parentComment: parentCommentText, timestamp: timestamp })
-.then(response => {
-const replyInput = replyBox.querySelector('#contenteditable-root');
-if (replyInput) {
-replyInput.innerText = response.comment;
-replyInput.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
-}
-})
-.catch(error => alert(`Lỗi: ${error.message}`))
-.finally(() => { aiReplyBtn.innerText = 'Phản hồi AI'; aiReplyBtn.disabled = false; });
-});
+        aiReplyBtn.innerText = 'Phản hồi AI';
+        aiReplyBtn.className = 'ai-reply-btn';
+        Object.assign(aiReplyBtn.style, { backgroundColor: '#1a73e8', color: 'white', border: 'none', padding: '10px 16px', fontSize: '14px', fontWeight: '500', borderRadius: '18px', cursor: 'pointer', marginRight: '8px', lineHeight: 'normal' });
+        buttonsContainer.prepend(aiReplyBtn);
+        aiReplyBtn.addEventListener('click', () => {
+            aiReplyBtn.innerText = 'Đang tạo...';
+            aiReplyBtn.disabled = true;
+            const timestamp = getVideoTimestamp();
+            sendMessagePromise({ action: 'createReply', url: window.location.href, parentComment: parentCommentText, timestamp: timestamp })
+                .then(response => {
+                    const replyInput = replyBox.querySelector('#contenteditable-root');
+                    if (replyInput) {
+                        replyInput.innerText = response.comment;
+                        replyInput.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
+                    }
+                })
+                .catch(error => alert(`Lỗi: ${error.message}`))
+                .finally(() => { aiReplyBtn.innerText = 'Phản hồi AI'; aiReplyBtn.disabled = false; });
+        });
     });
 }
 
