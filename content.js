@@ -106,10 +106,7 @@ async function runFullAutomation(expectedVideoId) {
         await humanizedDelay();
 
         checkContext();
-        // --- SỬA LỖI TẠI ĐÂY ---
-        // Sử dụng lại hàm scrollToElement để cuộn lên đáng tin cậy hơn
         await scrollToElement('ytd-watch-metadata', 'start');
-        // --- KẾT THÚC SỬA LỖI ---
         console.log('[Auto Commenter] Hoàn tất chuỗi hành động!');
     } catch (error) {
         if (error.message.includes('Page context changed')) {
@@ -120,7 +117,7 @@ async function runFullAutomation(expectedVideoId) {
     }
 }
 
-// --- BỘ KÍCH HOẠT TỰ ĐỘNG ---
+// --- BỘ KÍCH HOẠT TỰ ĐỘNG (ĐÃ CẬP NHẬT) ---
 async function setupVideoProgressListener() {
     if (progressCheckInterval) clearInterval(progressCheckInterval);
     try {
@@ -130,7 +127,23 @@ async function setupVideoProgressListener() {
                 console.log('[Auto Commenter] Tự động bình luận đang tắt.');
                 return;
             }
+
             progressCheckInterval = setInterval(() => {
+                // --- LOGIC MỚI: KIỂM TRA QUẢNG CÁO ---
+                const adModule = document.querySelector('.video-ads.ytp-ad-module');
+                if (adModule && adModule.childElementCount > 0) {
+                    console.log('[Auto Commenter] Phát hiện quảng cáo, tạm dừng đếm thời gian.');
+                    
+                    // Kiểm tra và click nút bỏ qua quảng cáo
+                    const skipButton = document.getElementById('skip-ad:1') || document.querySelector('.ytp-ad-skip-button-modern');
+                    if (skipButton) {
+                        console.log('[Auto Commenter] Tự động bỏ qua quảng cáo.');
+                        skipButton.click();
+                    }
+                    return; // Dừng, không kiểm tra tiến độ video
+                }
+                // --- KẾT THÚC LOGIC MỚI ---
+
                 if (video && video.duration && !automationHasRun) {
                     if ((video.currentTime / video.duration) >= 0.80) {
                         automationHasRun = true;
@@ -151,7 +164,7 @@ async function setupVideoProgressListener() {
                         });
                     }
                 }
-            }, 5000);
+            }, 3000); // Giảm tần suất kiểm tra một chút
         });
     } catch (error) {
         console.error('[Auto Commenter] Không tìm thấy video player để theo dõi:', error);
