@@ -54,7 +54,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     videoUrl: request.url,
                     commentContent: textResponse,
                     videoTimestamp: request.timestamp,
-                    realTimestamp: new Date().toISOString() // Thời gian thực tế
+                    realTimestamp: new Date().toISOString()
                 });
             }
             sendResponse({ success: true, comment: textResponse });
@@ -63,17 +63,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         
         return true; // Báo hiệu phản hồi bất đồng bộ
     } 
-    // Hành động mới để kiểm tra video trong lịch sử
+    // --- LOGIC MỚI ĐƯỢC CẬP NHẬT TẠI ĐÂY ---
     else if (request.action === 'isVideoInHistory') {
         const videoIdToCheck = request.videoId;
         if (!videoIdToCheck) {
             sendResponse({ isInHistory: false });
-            return;
+            return true;
         }
         chrome.storage.local.get({ commentHistory: [] }, (result) => {
             const history = result.commentHistory;
-            // Kiểm tra xem có mục nào trong lịch sử có cùng videoId không
-            const isInHistory = history.some(item => {
+
+            // 1. Lọc ra tất cả các bình luận trong lịch sử cho video này
+            const videoComments = history.filter(item => {
                 try {
                     const url = new URL(item.videoUrl);
                     return url.searchParams.get('v') === videoIdToCheck;
@@ -81,7 +82,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     return false;
                 }
             });
-            sendResponse({ isInHistory: isInHistory });
+
+            // 2. Nếu không có bình luận nào, cho phép chạy auto
+            if (videoComments.length === 0) {
+                sendResponse({ isInHistory: false });
+                return;
+            }
+
+            // 3. Nếu có, kiểm tra xem có ÍT NHẤT MỘT bình luận có nội dung không rỗng
+            const hasValidComment = videoComments.some(item => 
+                item.commentContent && item.commentContent.trim() !== ''
+            );
+
+            // 4. Chỉ khi có bình luận hợp lệ, mới coi là "đã có trong lịch sử" và bỏ qua
+            sendResponse({ isInHistory: hasValidComment });
         });
         return true; // Báo hiệu phản hồi bất đồng bộ
     }
