@@ -1,0 +1,29 @@
+{
+  "name": "youtube-super-assistant",
+  "version": "1.0.0",
+  "description": "Đây là một tiện ích mở rộng dành cho trình duyệt Chrome được thiết kế để trở thành trợ lý ảo của bạn trên YouTube. Công cụ này sử dụng trí tuệ nhân tạo (AI) để nâng cao trải nghiệm xem và tương tác của bạn, đặc biệt là trong phần bình luận.",
+  "main": "background.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack --config webpack.config.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LyVanBong/youtube-super-assistant.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/LyVanBong/youtube-super-assistant/issues"
+  },
+  "homepage": "https://github.com/LyVanBong/youtube-super-assistant#readme",
+  "devDependencies": {
+    "copy-webpack-plugin": "^13.0.1",
+    "javascript-obfuscator": "^4.1.1",
+    "webpack": "^5.101.3",
+    "webpack-cli": "^6.0.1",
+    "webpack-obfuscator": "^3.5.1"
+  }
+}
