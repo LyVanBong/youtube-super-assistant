@@ -14,7 +14,7 @@ module.exports = (env, argv) => {
       background: './background.js',
       content: './content.js',
       popup: './popup.js',
-      dashboard: './dashboard.js',
+      dashboard: './history.js',
     },
     output: {
       path: path.resolve(__dirname, 'dist'),
@@ -26,7 +26,7 @@ module.exports = (env, argv) => {
         patterns: [
           { from: 'manifest.json', to: 'manifest.json' },
           { from: 'popup.html', to: 'popup.html' },
-          { from: 'dashboard.html', to: 'dashboard.html' },
+          { from: 'history.html', to: 'history.html' },
           { from: 'icons', to: 'icons' },
         ],
       }),
