@@ -39,5 +39,5 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "options_page": "history.html"
+  "options_page": "settings.html"
 }

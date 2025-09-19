@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Settings - YouTube Super Assistant</title>
+    <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+    <div class="container">
+        <h1>YouTube Super Assistant - Settings</h1>
+
+        <div class="card">
+            <div class="card-header">
+                <h2>Tự động hóa</h2>
+            </div>
+            <div class="setting-item">
+                <div>
+                    <label for="auto-toggle">Bật tự động bình luận</label>
+                    <div class="description">Khi bật, tiện ích sẽ tự động bình luận khi xem gần hết video.</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="auto-toggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <div>
+                    <label>Ngưỡng kích hoạt tự động</label>
+                    <div class="description">Tiện ích sẽ kích hoạt ngẫu nhiên trong khoảng thời gian này.</div>
+                </div>
+                <div class="range-slider-container">
+                    <div class="range-values" id="range-values-label">30% - 80%</div>
+                    <div class="range-slider">
+                        <input type="range" id="range-min" min="10" max="100" step="5" value="30">
+                        <input type="range" id="range-max" min="10" max="100" step="5" value="80">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2>Cài đặt AI</h2>
+            </div>
+            <div class="setting-item">
+                <div>
+                    <label for="ai-language">Ngôn ngữ bình luận</label>
+                    <div class="description">Chọn ngôn ngữ cho các bình luận được tạo bởi AI.</div>
+                </div>
+                <select id="ai-language">
+                    <option disabled selected>Đang tải danh sách...</option>
+                </select>
+            </div>
+            <div class="setting-item" style="flex-direction: column; align-items: flex-start;">
+                <label for="custom-prompt">Prompt tùy chỉnh (nâng cao)</label>
+                <div class="description" style="margin-bottom: 10px;">
+                    Thêm chỉ dẫn riêng cho AI khi tạo bình luận. Bạn có thể chèn các biến sau vào prompt:
+                    <ul>
+                        <li><b>{videoTitle}</b> - Để chèn tiêu đề của video.</li>
+                        <li><b>{videoDescription}</b> - Để chèn mô tả của video.</li>
+                        <li><b>{videoTags}</b> - Để chèn các thẻ tag của video.</li>
+                        <li><b>{videoTranscript}</b> - Để chèn nội dung lời thoại của video (nếu có).</li>
+                    </ul>
+                </div>
+                <textarea id="custom-prompt" class="custom-prompt" placeholder="Ví dụ: Dựa trên lời thoại '{videoTranscript}', hãy tóm tắt ý chính trong 1 câu."></textarea>
+            </div>
+        </div>
+
+        <div class="card" hidden>
+            <div class="card-header">
+                <h2>Xác thực & API</h2>
+            </div>
+            <div class="setting-item" style="flex-direction: column; align-items: flex-start;">
+                <label for="ai-api-key">AI API Key</label>
+                <div class="description" style="margin-bottom: 10px;">
+                    Cung cấp API Key của các hệ thống AI để sử dụng.
+                </div>
+                <div class="input-with-icon">
+                    <input type="password" id="ai-api-key" placeholder="Ví dụ: sk-...">
+                    <button class="toggle-visibility" id="toggle-api-key">👁️</button>
+                </div>
+            </div>
+            <div class="setting-item" style="flex-direction: column; align-items: flex-start;">
+                <label for="access-token">Access Token</label>
+                <div class="description" style="margin-bottom: 10px;">
+                    Mã truy cập để sử dụng các tính năng cao cấp của YouTube Super Assistant.
+                </div>
+                <div class="input-with-icon">
+                    <input type="password" id="access-token" placeholder="Nhập mã truy cập của bạn">
+                    <button class="toggle-visibility" id="toggle-access-token">👁️</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <button id="save-btn">Lưu Cài đặt</button>
+        </div>
+    </div>
+    <script src="settings.js"></script>
+</body>
+</html>
