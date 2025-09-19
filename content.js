@@ -16,12 +16,11 @@ let currentVideoId = null;
 // --- BỘ ICON SVG CHUYÊN NGHIỆP ---
 const SVG_ICONS = {
     arrowUp: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>`,
-    comment: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
-    robot: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4m0 16v-4m8-8h-4m-8 0H4m15.5 2.5l-3-3m-10 0l-3 3m10 5l3 3m-10 0l3-3"/><circle cx="12" cy="12" r="2"/><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z"/></svg>`,
-    robotOff: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>`,
-    transcript: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`
+    comment: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+    robot: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4m0 16v-4m8-8h-4m-8 0H4m15.5 2.5l-3-3m-10 0l-3 3m10 5l3 3m-10 0l3-3"/><circle cx="12" cy="12" r="2"/><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z"/></svg>`,
+    robotOff: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>`,
+    transcript: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`
 };
-
 
 // --- CÁC HÀM TRỢ GIÚP (HELPER FUNCTIONS) ---
 const humanizedDelay = (min = 800, max = 1600) => new Promise(res => setTimeout(res, Math.random() * (max - min) + min));
@@ -70,39 +69,26 @@ function sendMessagePromise(message) {
     });
 }
 
-
-// --- TÍNH NĂNG MỚI: HIỆU ỨNG LOADING VÀ THÔNG BÁO ---
-/** Chèn CSS cho các hiệu ứng vào trang */
+// --- HIỆU ỨNG LOADING VÀ THÔNG BÁO ---
 function injectStyles() {
     const styleId = 'super-assistant-styles';
     if (document.getElementById(styleId)) return;
-
     const style = document.createElement('style');
     style.id = styleId;
     style.textContent = `
-        @keyframes super-assistant-spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        @keyframes super-assistant-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .super-assistant-loading-spinner {
-            position: absolute;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            border: 3px solid rgba(255, 255, 255, 0.2);
-            border-top-color: #4285F4;
+            position: absolute; width: 48px; height: 48px; border-radius: 50%;
+            border: 3px solid rgba(255, 255, 255, 0.2); border-top-color: #4285F4;
             animation: super-assistant-spin 1s linear infinite;
-        }
-    `;
+        }`;
     document.head.appendChild(style);
 }
 
-/** Bật/tắt trạng thái loading cho một nút bấm */
 function setButtonLoadingState(button, isLoading) {
     const spinnerId = `spinner-for-${button.title.replace(/\s/g, '-')}`;
     const svgElement = button.querySelector('svg');
     let spinner = document.getElementById(spinnerId);
-
     if (isLoading) {
         if (!spinner) {
             spinner = document.createElement('div');
@@ -111,22 +97,15 @@ function setButtonLoadingState(button, isLoading) {
             button.appendChild(spinner);
         }
         button.disabled = true;
-        if (svgElement) {
-            svgElement.style.opacity = '0.5'; // **SỬA LỖI: Làm mờ icon thay vì ẩn**
-        }
+        if (svgElement) svgElement.style.opacity = '0.5';
     } else {
-        if (spinner) {
-            spinner.remove();
-        }
+        if (spinner) spinner.remove();
         button.disabled = false;
-        if (svgElement) {
-            svgElement.style.opacity = '1'; // **SỬA LỖI: Khôi phục độ rõ nét của icon**
-        }
+        if (svgElement) svgElement.style.opacity = '1';
     }
 }
 
-/** Hiển thị một thông báo nhỏ trên trang YouTube */
-function showContentToast(message) {
+function showContentToast(message, isError = false) {
     let toast = document.getElementById('super-assistant-toast');
     if (!toast) {
         toast = document.createElement('div');
@@ -140,30 +119,16 @@ function showContentToast(message) {
         document.body.appendChild(toast);
     }
     toast.textContent = message;
+    // Đổi màu nền nếu là thông báo lỗi hoặc thông tin
+    toast.style.backgroundColor = isError ? '#dc3545' : '#007bff';
     toast.style.opacity = '1';
     setTimeout(() => { toast.style.opacity = '0'; }, 3000);
 }
 
-// --- TÍNH NĂNG SAO CHÉP LỜI THOẠI ---
-async function copyTranscript() {
-    try {
-        const menuButton = await waitForElement('#primary-inner #info-container ytd-menu-renderer button');
-        menuButton.click();
-        const showTranscriptButton = await waitForElement('ytd-menu-service-item-renderer.style-scope.ytd-menu-popup-renderer[aria-label="Hiển thị lời thoại"]');
-        showTranscriptButton.click();
-        const transcriptContainer = await waitForElement('ytd-transcript-renderer');
-        const segments = transcriptContainer.querySelectorAll('ytd-transcript-segment-renderer .segment-text');
-        if (segments.length === 0) throw new Error('Không tìm thấy nội dung lời thoại.');
-        let fullTranscript = '';
-        segments.forEach(segment => { fullTranscript += segment.innerText + ' '; });
-        await navigator.clipboard.writeText(fullTranscript.trim());
-        showContentToast('Đã sao chép lời thoại thành công!');
-    } catch (error) {
-        console.error('[Super Assistant] Lỗi khi sao chép lời thoại:', error);
-        showContentToast('Không thể sao chép. Video này có thể không có lời thoại.');
-    } finally {
-        document.body.dispatchEvent(new KeyboardEvent('keydown', { 'key': 'Escape' }));
-    }
+// --- TÍNH NĂNG SAO CHÉP LỜI THOẠI (TẠM ẨN) ---
+function copyTranscript() {
+    // Chỉ hiển thị thông báo
+    showContentToast('Tính năng đang được phát triển.');
 }
 
 // --- CHUỖI HÀNH ĐỘNG TỰ ĐỘNG ---
@@ -251,13 +216,11 @@ function createOrUpdateFloatingButtons() {
                 btn.onmouseout = () => { if (!btn.disabled) btn.style.transform = 'scale(1.0)'; };
                 return btn;
             };
-
             const scrollToTopBtn = createButton(SVG_ICONS.arrowUp, 'Cuộn lên trên cùng', () => {
                 setButtonLoadingState(scrollToTopBtn, true);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 setTimeout(() => setButtonLoadingState(scrollToTopBtn, false), 1000);
             });
-            
             const scrollToCommentBtn = createButton(SVG_ICONS.comment, 'Cuộn đến bình luận', () => {
                 setButtonLoadingState(scrollToCommentBtn, true);
                 scrollToElement('ytd-comments#comments')
@@ -266,12 +229,12 @@ function createOrUpdateFloatingButtons() {
                     .catch(console.error)
                     .finally(() => setButtonLoadingState(scrollToCommentBtn, false));
             });
-            
             const copyTranscriptBtn = createButton(SVG_ICONS.transcript, 'Sao chép Lời thoại', () => {
                 setButtonLoadingState(copyTranscriptBtn, true);
-                copyTranscript().finally(() => setButtonLoadingState(copyTranscriptBtn, false));
+                copyTranscript();
+                // Tắt loading sau một khoảng thời gian ngắn để tạo hiệu ứng nhấp nháy
+                setTimeout(() => setButtonLoadingState(copyTranscriptBtn, false), 500);
             });
-
             const autoToggleButton = createButton('', 'Bật/Tắt Tự động Bình luận', () => { chrome.storage.sync.get('isAutoCommentEnabled', (data) => { chrome.storage.sync.set({ isAutoCommentEnabled: !(data.isAutoCommentEnabled !== false) }); }); });
             const updateToggleButtonUI = (isEnabled) => {
                 autoToggleButton.innerHTML = isEnabled ? SVG_ICONS.robot : SVG_ICONS.robotOff;
