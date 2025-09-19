@@ -23,11 +23,8 @@ const SVG_ICONS = {
 
 
 // --- CÁC HÀM TRỢ GIÚP (HELPER FUNCTIONS) ---
-
-/** Tạo một khoảng trễ ngẫu nhiên để mô phỏng hành vi của người dùng. */
 const humanizedDelay = (min = 800, max = 1600) => new Promise(res => setTimeout(res, Math.random() * (max - min) + min));
 
-/** Lấy Video ID từ URL hiện tại. */
 function getVideoIdFromUrl(url) {
     try {
         const urlParams = new URLSearchParams(new URL(url).search);
@@ -35,7 +32,6 @@ function getVideoIdFromUrl(url) {
     } catch (e) { return null; }
 }
 
-/** Lấy timestamp hiện tại của video dưới dạng chuỗi 'phút:giây'. */
 function getVideoTimestamp() {
     const video = document.querySelector('video.html5-main-video');
     if (video && video.currentTime) {
@@ -44,21 +40,18 @@ function getVideoTimestamp() {
         const seconds = totalSeconds % 60;
         return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     }
-    return '00:00'; // Giá trị mặc định
+    return '00:00';
 }
 
-/** Cuộn đến một phần tử trên trang một cách mượt mà. */
 function scrollToElement(selector, blockOption = 'center') {
     return new Promise((resolve, reject) => {
         const element = document.querySelector(selector);
         if (!element) return reject(`Không tìm thấy phần tử: ${selector}`);
         element.scrollIntoView({ behavior: 'smooth', block: blockOption });
-        // Dùng timeout để đảm bảo cuộn xong
         setTimeout(() => resolve(element), 1000);
     });
 }
 
-/** Chờ một phần tử xuất hiện trên DOM. */
 function waitForElement(selector, timeout = 15000) {
     return new Promise((resolve, reject) => {
         const interval = setInterval(() => {
@@ -69,7 +62,6 @@ function waitForElement(selector, timeout = 15000) {
                 resolve(element);
             }
         }, 500);
-
         const timer = setTimeout(() => {
             clearInterval(interval);
             reject(`Hết thời gian chờ phần tử: ${selector}`);
@@ -77,7 +69,6 @@ function waitForElement(selector, timeout = 15000) {
     });
 }
 
-/** Gửi tin nhắn đến background script và trả về một Promise. */
 function sendMessagePromise(message) {
     return new Promise((resolve, reject) => {
         chrome.runtime.sendMessage(message, (response) => {
@@ -94,8 +85,6 @@ function sendMessagePromise(message) {
 
 
 // --- CHUỖI HÀNH ĐỘNG TỰ ĐỘNG ---
-
-/** Thực hiện toàn bộ chuỗi hành động: cuộn, tạo bình luận, gửi, và cuộn lại. */
 async function runFullAutomation(expectedVideoId) {
     const checkContext = () => {
         if (getVideoIdFromUrl(window.location.href) !== expectedVideoId) {
@@ -107,26 +96,21 @@ async function runFullAutomation(expectedVideoId) {
         checkContext();
         await scrollToElement('ytd-comments#comments');
         await humanizedDelay();
-
         checkContext();
         const placeholder = await waitForElement('ytd-comment-simplebox-renderer #placeholder-area');
         placeholder.click();
-        
         checkContext();
         const timestamp = getVideoTimestamp();
         const response = await sendMessagePromise({ action: 'createComment', url: window.location.href, timestamp: timestamp });
-
         checkContext();
         const commentBox = await waitForElement('ytd-commentbox #contenteditable-root');
         commentBox.innerText = response.comment;
         commentBox.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
         await humanizedDelay();
-
         checkContext();
         const submitButton = await waitForElement('ytd-commentbox #submit-button button:not([disabled])');
         submitButton.click();
         await humanizedDelay(2500, 4000);
-
         checkContext();
         window.scrollTo({ top: 0, behavior: 'smooth' });
         console.log('[Super Assistant] Hoàn tất chuỗi hành động!');
@@ -140,46 +124,55 @@ async function runFullAutomation(expectedVideoId) {
 }
 
 
+// --- **PHẦN CẬP NHẬT QUAN TRỌNG** ---
 // --- BỘ KÍCH HOẠT TỰ ĐỘNG ---
-
-/** Thiết lập listener để theo dõi tiến độ xem video. */
 async function setupVideoProgressListener() {
     if (progressCheckInterval) clearInterval(progressCheckInterval);
     try {
         const video = await waitForElement('video.html5-main-video', 10000);
 
-        chrome.storage.sync.get('isAutoCommentEnabled', (data) => {
-            if (data.isAutoCommentEnabled === false) {
-                console.log('[Super Assistant] Tự động bình luận đang tắt.');
+        // Lấy các cài đặt từ storage
+        const defaults = { 
+            isAutoCommentEnabled: true, 
+            autoPercentageMin: 30, 
+            autoPercentageMax: 80 
+        };
+
+        chrome.storage.sync.get(defaults, (settings) => {
+            // **Điều kiện 1: Kiểm tra xem tính năng có được bật không**
+            if (settings.isAutoCommentEnabled === false) {
+                console.log('[Super Assistant] Tự động bình luận đang tắt. Bỏ qua.');
                 return;
             }
 
+            // **Điều kiện 2: Sinh ra một số ngẫu nhiên trong khoảng**
+            const min = settings.autoPercentageMin / 100;
+            const max = settings.autoPercentageMax / 100;
+            const activationThreshold = Math.random() * (max - min) + min; // Tạo số ngẫu nhiên, ví dụ: 0.5 (tức 50%)
+
+            console.log(`[Super Assistant] Ngưỡng kích hoạt ngẫu nhiên được đặt là: ${(activationThreshold * 100).toFixed(2)}%`);
+
             progressCheckInterval = setInterval(() => {
-                // Tự động bỏ qua quảng cáo
+                // Bỏ qua quảng cáo
                 document.querySelector('.ytp-ad-skip-button-container .ytp-ad-skip-button, .ytp-ad-skip-button.ytp-button')?.click();
 
                 if (video && video.duration && !automationHasRun) {
-                    // Kích hoạt khi xem được 80% video
-                    if ((video.currentTime / video.duration) >= 0.80) {
+                    // **Điều kiện 3: Kích hoạt khi video đạt đến ngưỡng ngẫu nhiên**
+                    if ((video.currentTime / video.duration) >= activationThreshold) {
                         automationHasRun = true;
                         clearInterval(progressCheckInterval);
 
                         chrome.runtime.sendMessage({ action: 'isVideoInHistory', videoId: currentVideoId }, (response) => {
-                            if (chrome.runtime.lastError) {
-                                console.error(`Lỗi khi kiểm tra lịch sử: ${chrome.runtime.lastError.message}`);
-                                runFullAutomation(currentVideoId);
-                                return;
-                            }
-                            if (response && response.isInHistory) {
-                                console.log('[Super Assistant] Video đã có trong lịch sử. Bỏ qua tự động bình luận.');
-                            } else {
+                            if (chrome.runtime.lastError || (response && !response.isInHistory)) {
                                 console.log('[Super Assistant] Video chưa có trong lịch sử. Bắt đầu chuỗi tự động.');
                                 runFullAutomation(currentVideoId);
+                            } else {
+                                console.log('[Super Assistant] Video đã có trong lịch sử. Bỏ qua tự động bình luận.');
                             }
                         });
                     }
                 }
-            }, 3000);
+            }, 3000); // Kiểm tra mỗi 3 giây
         });
     } catch (error) {
         console.error('[Super Assistant] Không tìm thấy video player để theo dõi:', error);
@@ -188,8 +181,6 @@ async function setupVideoProgressListener() {
 
 
 // --- CÁC HÀM CHÈN GIAO DIỆN (UI INJECTION) ---
-
-/** Tạo hoặc cập nhật các nút điều khiển nổi ở góc màn hình. */
 function createOrUpdateFloatingButtons() {
     const isWatchPage = window.location.href.includes('/watch');
     const containerId = 'super-assistant-floating-buttons';
@@ -217,25 +208,15 @@ function createOrUpdateFloatingButtons() {
             const scrollToTopBtn = createButton(SVG_ICONS.arrowUp, 'Cuộn lên trên cùng', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
             
             const scrollToCommentBtn = createButton(SVG_ICONS.comment, 'Cuộn đến bình luận', () => {
-                const commentsElement = document.querySelector('ytd-comments#comments');
-                if (commentsElement) {
-                    commentsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                scrollToElement('ytd-comments#comments').then(() => {
                     setTimeout(() => document.querySelector('ytd-comment-simplebox-renderer #placeholder-area')?.click(), 500);
-                }
+                }).catch(console.error);
             });
 
             const autoToggleButton = createButton('', 'Bật/Tắt Tự động Bình luận', () => {
                  chrome.storage.sync.get('isAutoCommentEnabled', (data) => {
                     const newIsEnabled = !(data.isAutoCommentEnabled !== false);
-                    chrome.storage.sync.set({ isAutoCommentEnabled: newIsEnabled }, () => {
-                        updateToggleButtonUI(newIsEnabled);
-                        if (newIsEnabled) {
-                            automationHasRun = false; // Reset cờ để có thể chạy lại
-                            setupVideoProgressListener();
-                        } else {
-                            if (progressCheckInterval) clearInterval(progressCheckInterval);
-                        }
-                    });
+                    chrome.storage.sync.set({ isAutoCommentEnabled: newIsEnabled });
                 });
             });
             
@@ -244,8 +225,7 @@ function createOrUpdateFloatingButtons() {
                 autoToggleButton.style.backgroundColor = isEnabled ? '#4285F4' : 'rgba(15, 15, 15, 0.9)';
             };
             
-            // Khởi tạo và lắng nghe thay đổi
-            chrome.storage.sync.get('isAutoCommentEnabled', (data) => updateToggleButtonUI(data.isAutoCommentEnabled !== false));
+            chrome.storage.sync.get({ isAutoCommentEnabled: true }, (data) => updateToggleButtonUI(data.isAutoCommentEnabled));
             chrome.storage.onChanged.addListener((changes, namespace) => {
                 if (namespace === 'sync' && changes.isAutoCommentEnabled) {
                     updateToggleButtonUI(changes.isAutoCommentEnabled.newValue);
@@ -261,7 +241,6 @@ function createOrUpdateFloatingButtons() {
     }
 }
 
-/** Chèn nút "Bình luận AI" vào hộp bình luận chính. */
 function injectAICommentButton() {
     const buttonsContainer = document.querySelector("ytd-commentbox #buttons");
     if (!buttonsContainer || buttonsContainer.querySelector('.ai-comment-btn-super')) return;
@@ -298,7 +277,6 @@ function injectAICommentButton() {
     });
 }
 
-/** Chèn nút "Phản hồi AI" vào các hộp trả lời bình luận. */
 function injectAIReplyButtons() {
     document.querySelectorAll("ytd-comment-reply-dialog-renderer").forEach(replyBox => {
         const buttonsContainer = replyBox.querySelector("#buttons");
@@ -343,8 +321,6 @@ function injectAIReplyButtons() {
 
 
 // --- BỘ QUẢN LÝ VÀ KHỞI TẠO CHÍNH ---
-
-/** Hàm khởi tạo hoặc khởi tạo lại tất cả các thành phần của content script. */
 function initialize() {
     if (observer) observer.disconnect();
     if (progressCheckInterval) clearInterval(progressCheckInterval);
@@ -354,7 +330,6 @@ function initialize() {
 
     createOrUpdateFloatingButtons();
 
-    // Sử dụng MutationObserver để chèn nút ngay khi các thành phần của YouTube xuất hiện
     observer = new MutationObserver(() => {
         injectAICommentButton();
         injectAIReplyButtons();
@@ -366,16 +341,14 @@ function initialize() {
     }
 }
 
-// Lắng nghe tin nhắn từ background script và popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "ytHistoryUpdated") {
-        // Chờ một chút để trang YouTube tải xong sau khi chuyển URL
         setTimeout(initialize, 500);
     } else if (request.action === "getTimestamp") {
         sendResponse({ timestamp: getVideoTimestamp() });
     }
-    return true; // Bắt buộc cho các phản hồi bất đồng bộ
+    return true;
 });
 
-// Chạy lần đầu khi script được tiêm vào trang
+// Chạy lần đầu
 initialize();
