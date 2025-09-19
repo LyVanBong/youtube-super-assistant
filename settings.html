@@ -25,12 +25,15 @@
             </div>
             <div class="setting-item">
                 <div>
-                    <label for="auto-percentage">Ngưỡng kích hoạt tự động</label>
-                    <div class="description">Chọn thời lượng video đã xem để kích hoạt tự động bình luận.</div>
+                    <label>Ngưỡng kích hoạt tự động</label>
+                    <div class="description">Tiện ích sẽ kích hoạt ngẫu nhiên trong khoảng thời gian này.</div>
                 </div>
-                <div class="input-group">
-                    <input type="range" id="auto-percentage" min="10" max="100" step="5" value="80">
-                    <span id="percentage-label">80%</span>
+                <div class="range-slider-container">
+                    <div class="range-values" id="range-values-label">30% - 80%</div>
+                    <div class="range-slider">
+                        <input type="range" id="range-min" min="10" max="100" step="5" value="30">
+                        <input type="range" id="range-max" min="10" max="100" step="5" value="80">
+                    </div>
                 </div>
             </div>
         </div>

@@ -1,11 +1,11 @@
 body {
-    font-family: Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     margin: 0;
-    background-color: #f4f4f4;
+    background-color: #f6f8fa;
     color: #333;
     display: flex;
     justify-content: center;
-    padding-top: 30px;
+    padding: 30px 15px;
 }
 .container {
     width: 100%;
@@ -13,18 +13,19 @@ body {
 }
 h1 {
     text-align: center;
-    color: #333;
+    color: #24292e;
     margin-bottom: 25px;
+    font-size: 28px;
 }
 .card {
     background-color: white;
     border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    border: 1px solid #d1d5da;
     margin-bottom: 20px;
     padding: 25px;
 }
 .card-header {
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid #e1e4e8;
     padding-bottom: 10px;
     margin-bottom: 20px;
 }
@@ -38,47 +39,94 @@ h1 {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+    gap: 20px;
 }
 .setting-item:last-child {
     margin-bottom: 0;
 }
 .setting-item label {
-    font-weight: 500;
-    color: #555;
+    font-weight: 600;
+    color: #24292e;
+    font-size: 14px;
 }
 .setting-item .description {
     font-size: 13px;
-    color: #777;
+    color: #586069;
     margin-top: 4px;
-}
-.input-group {
-    display: flex;
-    align-items: center;
-    gap: 15px;
 }
 
 /* --- Các thành phần UI --- */
-/* Toggle Switch */
 .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
 .switch input { opacity: 0; width: 0; height: 0; }
 .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
-.slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+.slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
 input:checked + .slider { background-color: #ff0000; }
 input:checked + .slider:before { transform: translateX(22px); }
 
-/* Range Slider */
-input[type="range"] {
-    -webkit-appearance: none;
+select, textarea {
+    padding: 8px 12px; border: 1px solid #d1d5da; border-radius: 6px;
+    font-size: 14px; width: 250px; box-shadow: inset 0 1px 2px rgba(27,31,35,.075);
+}
+textarea { width: 100%; min-height: 100px; resize: vertical; }
+select:focus, textarea:focus { border-color: #0366d6; outline: none; box-shadow: 0 0 0 3px rgba(3,102,214,.3); }
+
+.footer { text-align: center; margin-top: 20px; }
+#save-btn {
+    padding: 12px 30px; font-size: 16px; color: white; background-color: #2c974b;
+    border: 1px solid rgba(27,31,35,.15); border-radius: 6px; cursor: pointer;
+    font-weight: 600; transition: background-color 0.2s;
+}
+#save-btn:hover { background-color: #278742; }
+
+/* --- CSS CHO THANH TRƯỢT KÉP --- */
+.range-slider-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    width: 220px;
+}
+.range-values {
+    font-weight: bold;
+    color: #24292e;
+    font-size: 14px;
+    margin-bottom: 8px;
+    background-color: #f1f1f1;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+.range-slider {
+    position: relative;
     width: 200px;
     height: 8px;
-    background: #ddd;
-    border-radius: 5px;
-    outline: none;
-    opacity: 0.7;
-    transition: opacity .2s;
 }
-input[type="range"]:hover { opacity: 1; }
-input[type="range"]::-webkit-slider-thumb {
+.range-slider input[type="range"] {
+    position: absolute;
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    background: none;
+    pointer-events: none;
+}
+.range-slider::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 4px;
+    background: #e1e4e8;
+    top: 50%;
+    transform: translateY(-50%);
+    border-radius: 4px;
+}
+.range-slider .slider-track {
+    position: absolute;
+    height: 4px;
+    background: #ff0000;
+    top: 50%;
+    transform: translateY(-50%);
+    border-radius: 4px;
+    z-index: 1;
+}
+.range-slider input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     width: 20px;
@@ -86,40 +134,7 @@ input[type="range"]::-webkit-slider-thumb {
     background: #ff0000;
     cursor: pointer;
     border-radius: 50%;
+    pointer-events: auto;
+    z-index: 2;
+    position: relative;
 }
-#percentage-label {
-    font-weight: bold;
-    color: #333;
-    min-width: 40px;
-}
-/* Select & Textarea */
-select, textarea {
-    padding: 8px 12px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 14px;
-    width: 250px;
-}
-textarea {
-    width: 100%;
-    min-height: 100px;
-    resize: vertical;
-}
-
-/* Save Button */
-.footer {
-    text-align: center;
-    margin-top: 20px;
-}
-#save-btn {
-    padding: 12px 30px;
-    font-size: 16px;
-    color: white;
-    background-color: #007bff;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-#save-btn:hover { background-color: #0056b3; }
-#save-btn.saved { background-color: #28a745; }
