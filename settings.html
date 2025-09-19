@@ -48,15 +48,21 @@
                     <div class="description">Chọn ngôn ngữ cho các bình luận được tạo bởi AI.</div>
                 </div>
                 <select id="ai-language">
-                    <option value="Vietnamese">Tiếng Việt</option>
-                    <option value="English">Tiếng Anh</option>
-                    <option value="auto">Tự động phát hiện</option>
+                    <option disabled selected>Đang tải danh sách...</option>
                 </select>
             </div>
             <div class="setting-item" style="flex-direction: column; align-items: flex-start;">
                 <label for="custom-prompt">Prompt tùy chỉnh (nâng cao)</label>
-                <div class="description" style="margin-bottom: 10px;">Thêm chỉ dẫn riêng cho AI khi tạo bình luận. Sử dụng `{videoTitle}` để chèn tiêu đề video.</div>
-                <textarea id="custom-prompt" placeholder="Ví dụ: Hãy tạo một bình luận hài hước về video có tiêu đề '{videoTitle}'"></textarea>
+                <div class="description" style="margin-bottom: 10px;">
+                    Thêm chỉ dẫn riêng cho AI khi tạo bình luận. Bạn có thể chèn các biến sau vào prompt:
+                    <ul>
+                        <li><b>{videoTitle}</b> - Để chèn tiêu đề của video.</li>
+                        <li><b>{videoDescription}</b> - Để chèn mô tả của video.</li>
+                        <li><b>{videoTags}</b> - Để chèn các thẻ tag của video.</li>
+                        <li><b>{videoTranscript}</b> - Để chèn nội dung lời thoại của video (nếu có).</li>
+                    </ul>
+                </div>
+                <textarea id="custom-prompt" placeholder="Ví dụ: Dựa trên lời thoại '{videoTranscript}', hãy tóm tắt ý chính trong 1 câu."></textarea>
             </div>
         </div>
         
