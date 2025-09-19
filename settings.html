@@ -62,7 +62,33 @@
                         <li><b>{videoTranscript}</b> - Để chèn nội dung lời thoại của video (nếu có).</li>
                     </ul>
                 </div>
-                <textarea id="custom-prompt" placeholder="Ví dụ: Dựa trên lời thoại '{videoTranscript}', hãy tóm tắt ý chính trong 1 câu."></textarea>
+                <textarea id="custom-prompt" class="custom-prompt" placeholder="Ví dụ: Dựa trên lời thoại '{videoTranscript}', hãy tóm tắt ý chính trong 1 câu."></textarea>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2>Xác thực & API</h2>
+            </div>
+            <div class="setting-item" style="flex-direction: column; align-items: flex-start;">
+                <label for="ai-api-key">AI API Key</label>
+                <div class="description" style="margin-bottom: 10px;">
+                    Cung cấp API Key của các hệ thống AI để sử dụng.
+                </div>
+                <div class="input-with-icon">
+                    <input type="password" id="ai-api-key" placeholder="Ví dụ: sk-...">
+                    <button class="toggle-visibility" id="toggle-api-key">👁️</button>
+                </div>
+            </div>
+            <div class="setting-item" style="flex-direction: column; align-items: flex-start;">
+                <label for="access-token">Access Token</label>
+                <div class="description" style="margin-bottom: 10px;">
+                    Mã truy cập để sử dụng các tính năng cao cấp của YouTube Super Assistant.
+                </div>
+                <div class="input-with-icon">
+                    <input type="password" id="access-token" placeholder="Nhập mã truy cập của bạn">
+                    <button class="toggle-visibility" id="toggle-access-token">👁️</button>
+                </div>
             </div>
         </div>
         
