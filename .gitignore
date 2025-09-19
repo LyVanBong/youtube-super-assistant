@@ -1,0 +1,20 @@
+# Bỏ qua các gói phụ thuộc do npm cài đặt
+# Thư mục này rất nặng và có thể được cài lại dễ dàng bằng lệnh `npm install`
+node_modules/
+
+# Bỏ qua thư mục build
+# Thư mục này chứa code đã được xử lý (obfuscate, minify), không phải code gốc.
+# Nó sẽ được tạo ra mỗi khi bạn chạy `npm run build`.
+dist/
+
+# Bỏ qua các tệp log của npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Bỏ qua các tệp do hệ điều hành tạo ra
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
