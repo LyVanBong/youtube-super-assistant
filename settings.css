@@ -1,0 +1,125 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background-color: #f4f4f4;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    padding-top: 30px;
+}
+.container {
+    width: 100%;
+    max-width: 700px;
+}
+h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 25px;
+}
+.card {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    padding: 25px;
+}
+.card-header {
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+.card-header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #ff0000;
+}
+.setting-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.setting-item:last-child {
+    margin-bottom: 0;
+}
+.setting-item label {
+    font-weight: 500;
+    color: #555;
+}
+.setting-item .description {
+    font-size: 13px;
+    color: #777;
+    margin-top: 4px;
+}
+.input-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* --- Các thành phần UI --- */
+/* Toggle Switch */
+.switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+.slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+input:checked + .slider { background-color: #ff0000; }
+input:checked + .slider:before { transform: translateX(22px); }
+
+/* Range Slider */
+input[type="range"] {
+    -webkit-appearance: none;
+    width: 200px;
+    height: 8px;
+    background: #ddd;
+    border-radius: 5px;
+    outline: none;
+    opacity: 0.7;
+    transition: opacity .2s;
+}
+input[type="range"]:hover { opacity: 1; }
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #ff0000;
+    cursor: pointer;
+    border-radius: 50%;
+}
+#percentage-label {
+    font-weight: bold;
+    color: #333;
+    min-width: 40px;
+}
+/* Select & Textarea */
+select, textarea {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    width: 250px;
+}
+textarea {
+    width: 100%;
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* Save Button */
+.footer {
+    text-align: center;
+    margin-top: 20px;
+}
+#save-btn {
+    padding: 12px 30px;
+    font-size: 16px;
+    color: white;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+#save-btn:hover { background-color: #0056b3; }
+#save-btn.saved { background-color: #28a745; }

@@ -1,11 +1,12 @@
 document.addEventListener('DOMContentLoaded', function () {
+    // Lấy các element từ DOM
     const createCommentBtn = document.getElementById('createCommentBtn');
     const resultDiv = document.getElementById('result');
-    const autoToggle = document.getElementById('auto-toggle');
     const btnIcon = document.getElementById('btn-icon');
     const btnText = document.getElementById('btn-text');
+    const settingsBtn = document.getElementById('settingsBtn');
 
-    // --- Quản lý trạng thái loading ---
+    // --- Quản lý trạng thái loading của nút tạo bình luận ---
     function setLoading(isLoading) {
         if (isLoading) {
             createCommentBtn.disabled = true;
@@ -18,23 +19,19 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // --- Quản lý công tắc Tự động ---
-    // Khởi tạo trạng thái của công tắc
-    chrome.storage.sync.get('isAutoCommentEnabled', (data) => {
-        autoToggle.checked = data.isAutoCommentEnabled !== false;
-    });
+    // --- XỬ LÝ SỰ KIỆN CHO NÚT CÀI ĐẶT ---
+    // Đây là phần quan trọng nhất để sửa lỗi
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', (event) => {
+            event.preventDefault(); // Ngăn hành động mặc định của thẻ <a>
+            chrome.runtime.openOptionsPage(); // Mở trang được định nghĩa trong "options_page" của manifest.json
+        });
+    }
 
-    // Lắng nghe sự kiện thay đổi
-    autoToggle.addEventListener('change', () => {
-        const isEnabled = autoToggle.checked;
-        chrome.storage.sync.set({ isAutoCommentEnabled: isEnabled });
-    });
-
-
-    // --- Xử lý sự kiện click nút chính ---
+    // --- Xử lý sự kiện click nút tạo bình luận ---
     createCommentBtn.addEventListener('click', async () => {
         setLoading(true);
-        resultDiv.textContent = ''; // Xóa kết quả cũ
+        resultDiv.textContent = ''; 
 
         try {
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
