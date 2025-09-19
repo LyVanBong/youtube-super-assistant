@@ -13,13 +13,13 @@ let automationHasRun = false;
 let progressCheckInterval;
 let currentVideoId = null;
 
-// --- BỘ ICON SVG CHUYÊN NGHIỆP ---
+// --- BỘ ICON SVG CHUYÊN NGHIỆP (ĐÃ SỬA LỖI CÚ PHÁP) ---
 const SVG_ICONS = {
-    arrowUp: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>`,
-    comment: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
-    robot: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4m0 16v-4m8-8h-4m-8 0H4m15.5 2.5l-3-3m-10 0l-3 3m10 5l3 3m-10 0l3-3"/><circle cx="12" cy="12" r="2"/><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Z"/></svg>`,
-    robotOff: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>`,
-    transcript: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`
+    arrowUp: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>',
+    comment: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
+    robot: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4m0 16v-4m8-8h-4m-8 0H4m15.5 2.5l-3-3m-10 0l-3 3m10 5l3 3m-10 0l3-3"></path><circle cx="12" cy="12" r="2"></circle><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"></path></svg>',
+    robotOff: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>',
+    transcript: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>'
 };
 
 // --- CÁC HÀM TRỢ GIÚP (HELPER FUNCTIONS) ---
@@ -119,7 +119,6 @@ function showContentToast(message, isError = false) {
         document.body.appendChild(toast);
     }
     toast.textContent = message;
-    // Đổi màu nền nếu là thông báo lỗi hoặc thông tin
     toast.style.backgroundColor = isError ? '#dc3545' : '#007bff';
     toast.style.opacity = '1';
     setTimeout(() => { toast.style.opacity = '0'; }, 3000);
@@ -127,7 +126,6 @@ function showContentToast(message, isError = false) {
 
 // --- TÍNH NĂNG SAO CHÉP LỜI THOẠI (TẠM ẨN) ---
 function copyTranscript() {
-    // Chỉ hiển thị thông báo
     showContentToast('Tính năng đang được phát triển.');
 }
 
@@ -232,7 +230,6 @@ function createOrUpdateFloatingButtons() {
             const copyTranscriptBtn = createButton(SVG_ICONS.transcript, 'Sao chép Lời thoại', () => {
                 setButtonLoadingState(copyTranscriptBtn, true);
                 copyTranscript();
-                // Tắt loading sau một khoảng thời gian ngắn để tạo hiệu ứng nhấp nháy
                 setTimeout(() => setButtonLoadingState(copyTranscriptBtn, false), 500);
             });
             const autoToggleButton = createButton('', 'Bật/Tắt Tự động Bình luận', () => { chrome.storage.sync.get('isAutoCommentEnabled', (data) => { chrome.storage.sync.set({ isAutoCommentEnabled: !(data.isAutoCommentEnabled !== false) }); }); });
