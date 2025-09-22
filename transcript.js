@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function createCopyPopover(getTextWithTimestamp, getTextOnly) {
         const popover = document.createElement('div');
         popover.className = 'copy-popover';
-        
+
         const item1 = document.createElement('div');
         item1.className = 'copy-popover-item';
         item1.textContent = 'Sao chép văn bản';
@@ -40,16 +40,17 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 element.textContent = originalText;
                 element.style.color = '';
-                if(activePopover) activePopover.classList.remove('show');
+                if (activePopover) activePopover.classList.remove('show');
                 activePopover = null;
             }, 1500);
         });
     }
-    
-    function addCopyFunctionality(container, getText, tooltipText = 'Sao chép') {
+
+    function addCopyFunctionality(container, getText) {
+        if (!container) return;
         const copyBtn = document.createElement('button');
         copyBtn.className = 'copy-btn';
-        copyBtn.title = tooltipText;
+        copyBtn.title = 'Sao chép';
         copyBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             copyToClipboard(getText(), copyBtn);
@@ -59,6 +60,20 @@ document.addEventListener('DOMContentLoaded', () => {
         container.appendChild(copyBtn);
     }
 
+    function parseISO8601Duration(durationString) {
+        if (!durationString) return '00:00';
+        const regex = /PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/;
+        const matches = durationString.match(regex);
+        if (!matches) return '00:00';
+        const hours = parseInt(matches[1] || 0);
+        const minutes = parseInt(matches[2] || 0);
+        const seconds = parseInt(matches[3] || 0);
+        if (hours > 0) {
+            return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+        return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
     function timeStringToSeconds(timeStr) {
         if (!timeStr || typeof timeStr !== 'string') return 0;
         const parts = timeStr.split(':').map(Number);
@@ -66,25 +81,35 @@ document.addEventListener('DOMContentLoaded', () => {
         if (parts.length === 2) return parts[0] * 60 + parts[1];
         return 0;
     }
-    
-    function getVideoIdFromUrl(url) { 
-        try { 
-            return new URLSearchParams(new URL(url).search).get('v'); 
-        } catch (e) { 
-            return null; 
-        } 
+
+    function getVideoIdFromUrl(url) {
+        try {
+            return new URLSearchParams(new URL(url).search).get('v');
+        } catch (e) {
+            return null;
+        }
     }
+
+    const categoryMap = {
+        "1": "Film & Animation", "2": "Autos & Vehicles", "10": "Music", "15": "Pets & Animals",
+        "17": "Sports", "18": "Short Movies", "19": "Travel & Events", "20": "Gaming", "21": "Videoblogging",
+        "22": "People & Blogs", "23": "Comedy", "24": "Entertainment", "25": "News & Politics",
+        "26": "Howto & Style", "27": "Education", "28": "Science & Technology", "29": "Nonprofits & Activism",
+        "30": "Movies", "31": "Anime/Animation", "32": "Action/Adventure", "33": "Classics", "34": "Comedy",
+        "35": "Documentary", "36": "Drama", "37": "Family", "38": "Foreign", "39": "Horror",
+        "40": "Sci-Fi/Fantasy", "41": "Thriller", "42": "Shorts", "43": "Shows", "44": "Trailers"
+    };
 
     // --- Hàm gọi API chung ---
     async function fetchApiData(url, queryParam) {
         const settings = await chrome.storage.sync.get(['accessToken', 'aiApiKey']);
         const token = settings.accessToken || '23105d20-3812-44c9-9906-8adf1fd5e69e';
         const API_URL = `https://workflow.softty.net/webhook/${token}?${queryParam}=true`;
-        
+
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
+            body: JSON.stringify({
                 url,
                 aiApiKey: settings.aiApiKey || '',
                 accessToken: settings.accessToken || ''
@@ -99,50 +124,88 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Các hàm render ---
     function renderVideoInfo(data) {
-        if (!data || !data[0]?.snippet) {
+        const videoData = data?.[0];
+        if (!videoData) {
             infoPanel.innerHTML = '<div class="card"><h3>Không thể tải thông tin video.</h3></div>';
             return;
         }
-        const { snippet, statistics, player } = data[0];
-        
-        document.getElementById('video-embed-container').innerHTML = player.embedHtml.replace(/width="\d+"/, 'width="100%"').replace(/height="\d+"/, 'height="100%"').replace('src="//', 'src="https://');
-        
-        const thumbnailUrlInput = document.getElementById('thumbnail-url');
-        thumbnailUrlInput.value = snippet.thumbnails?.maxres?.url || snippet.thumbnails?.high?.url || '';
-        addCopyFunctionality(document.querySelector('.thumbnail-url-box .url-wrapper'), () => thumbnailUrlInput.value, 'Sao chép URL Thumbnail');
-        
-        document.getElementById('channel-link').href = `https://www.youtube.com/channel/${snippet.channelId}`;
-        document.getElementById('channel-name').textContent = snippet.channelTitle;
+
+        const { id, snippet = {}, statistics = {}, player = {}, contentDetails = {} } = videoData;
+
+        // An toàn hơn: Kiểm tra player.embedHtml
+        if (player.embedHtml) {
+            document.getElementById('video-embed-container').innerHTML = player.embedHtml
+                .replace(/width="\d+"/, 'width="100%"')
+                .replace(/height="\d+"/, 'height="100%"')
+                .replace('src="//', 'src="https://');
+        }
 
         const videoTitle = document.getElementById('video-title');
-        videoTitle.textContent = snippet.title;
-        addCopyFunctionality(document.querySelector('.title-container'), () => videoTitle.textContent, 'Sao chép tiêu đề');
+        videoTitle.textContent = snippet.title || 'Không có tiêu đề';
+        addCopyFunctionality(document.getElementById('title-section'), () => videoTitle.textContent);
 
-        document.getElementById('view-count').textContent = Number(statistics.viewCount).toLocaleString('vi-VN');
-        document.getElementById('like-count').textContent = Number(statistics.likeCount).toLocaleString('vi-VN');
-        document.getElementById('comment-count').textContent = Number(statistics.commentCount).toLocaleString('vi-VN');
+        document.getElementById('channel-link').href = `https://www.youtube.com/channel/${snippet.channelId}`;
+        document.getElementById('channel-name').textContent = snippet.channelTitle || 'Không rõ';
+
+        const statsGrid = document.getElementById('stats-section');
+        const statsData = [
+            { label: "Lượt xem", value: Number(statistics.viewCount || 0).toLocaleString('vi-VN'), icon: '<svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"></path></svg>' },
+            { label: "Lượt thích", value: Number(statistics.likeCount || 0).toLocaleString('vi-VN'), icon: '<svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></svg>' },
+            { label: "Bình luận", value: Number(statistics.commentCount || 0).toLocaleString('vi-VN'), icon: '<svg viewBox="0 0 24 24"><path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18zM18 14H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"></path></svg>' },
+            { label: "Thời lượng", value: parseISO8601Duration(contentDetails.duration), icon: '<svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"></path></svg>' },
+            { label: "Ngày đăng", value: snippet.publishedAt ? new Date(snippet.publishedAt).toLocaleDateString('vi-VN') : 'Không rõ', icon: '<svg viewBox="0 0 24 24"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"></path></svg>' },
+            { label: "Chất lượng", value: contentDetails.definition?.toUpperCase() || 'N/A', icon: '<svg viewBox="0 0 24 24"><path d="M19 4H5c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 11H9.5v-2h-2v2H6V9h1.5v2.5h2V9H11v6zm7-1h-1.75l-1.75-2.25V15H13V9h1.5v2.25L16.25 9H18l-2.25 3L18 15z"></path></svg>' },
+            { label: "Phụ đề", value: contentDetails.caption === 'true' ? 'Có' : 'Không', icon: '<svg viewBox="0 0 24 24"><path d="M4 4h16v12H4z" fill-opacity=".3"/><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10h2v2H6zm0 4h8v2H6zm10-4h2v2h-2zm-4-4h2v2h-2z"/></svg>' },
+            { label: "Danh mục", value: categoryMap[snippet.categoryId] || 'Không xác định', icon: '<svg viewBox="0 0 24 24"><path d="M12 2l-5.5 9h11z"/><circle cx="12" cy="16" r="2"/><path d="M20 22H4v-2h16z"/></svg>' }
+        ];
+        statsGrid.innerHTML = statsData.map(item => `
+            <div class="stat-item">
+                <span class="label">${item.label}</span>
+                <span class="value">${item.icon}${item.value}</span>
+            </div>
+        `).join('');
+
+        const idSection = document.getElementById('id-section');
+        idSection.innerHTML = '<h3 class="section-header">Thông tin định danh</h3>';
+        const thumbnail = snippet.thumbnails?.maxres?.url || snippet.thumbnails?.high?.url || snippet.thumbnails?.medium?.url;
+        [
+            { label: "Video ID", value: id },
+            { label: "Channel ID", value: snippet.channelId },
+            { label: "Thumbnail URL", value: thumbnail, monospace: true }
+        ].forEach(item => {
+            if (!item.value) return;
+            const row = document.createElement('div');
+            row.className = 'info-row';
+            row.innerHTML = `<span class="label">${item.label}</span><span class="value ${item.monospace ? 'monospace' : ''}">${item.value}</span>`;
+            addCopyFunctionality(row, () => item.value);
+            idSection.appendChild(row);
+        });
 
         const description = document.getElementById('video-description');
         const toggleDescriptionBtn = document.getElementById('toggle-description');
         description.textContent = snippet.description || "Video này không có mô tả.";
-        addCopyFunctionality(document.querySelector('.description-box'), () => description.textContent, 'Sao chép mô tả');
-        if (!snippet.description || description.offsetHeight < 80) {
+        addCopyFunctionality(document.getElementById('description-section'), () => description.textContent);
+        if (!snippet.description || description.scrollHeight <= 100) {
             if (toggleDescriptionBtn) toggleDescriptionBtn.style.display = 'none';
         }
 
         const tagsContainer = document.getElementById('video-tags');
         if (snippet.tags && snippet.tags.length > 0) {
+            document.getElementById('tags-section').style.display = 'block';
+            tagsContainer.innerHTML = '';
             snippet.tags.forEach(tag => {
                 const tagEl = document.createElement('span');
                 tagEl.className = 'tag';
                 tagEl.textContent = tag;
                 tagsContainer.appendChild(tagEl);
             });
-            addCopyFunctionality(document.querySelector('.tags-box'), () => snippet.tags.join(', '), 'Sao chép tất cả tags');
+            addCopyFunctionality(document.getElementById('tags-section'), () => snippet.tags.join(', '));
         } else {
-            tagsContainer.innerHTML = '<span class="tag">Không có thẻ tag</span>';
+            document.getElementById('tags-section').style.display = 'none';
         }
-        
+
+        document.getElementById('topics-section').style.display = 'none';
+
         infoPanel.classList.remove('loading');
     }
 
@@ -151,43 +214,48 @@ document.addEventListener('DOMContentLoaded', () => {
         const transcriptContent = document.getElementById('transcript-content');
         let rawTranscript = null;
 
-        if (data[0]?.message === 'no transcript' || !data[0]) {
+        if (!data || data.length === 0 || data[0]?.message === 'no transcript') {
             rawTranscript = [];
-        } else if (data[0]?.data?.transcripts) {
-            const transcriptData = data[0].data;
-            const langCodeEntry = transcriptData.language_code?.[0];
-            const langCode = langCodeEntry ? langCodeEntry.code : null;
-            if (langCode && transcriptData.transcripts[langCode]) {
-                const transcripts = transcriptData.transcripts[langCode];
-                rawTranscript = transcripts.custom || transcripts.default || transcripts.auto;
+        } else {
+            const transcriptResponse = data.find(item => item?.data?.transcripts);
+            if (transcriptResponse) {
+                const transcriptData = transcriptResponse.data;
+                const langCodeEntry = transcriptData.language_code?.[0];
+                const langCode = langCodeEntry?.code;
+                if (langCode && transcriptData.transcripts[langCode]) {
+                    const transcripts = transcriptData.transcripts[langCode];
+                    rawTranscript = transcripts.custom || transcripts.default || transcripts.auto;
+                }
             }
         }
         
+        rawTranscript = Array.isArray(rawTranscript) ? rawTranscript : [];
+
         transcriptContent.innerHTML = '';
-        if (rawTranscript && rawTranscript.length > 0) {
+        if (rawTranscript.length > 0) {
             const fullTranscriptTextOnly = rawTranscript.map(seg => seg.text).join('\n');
             const fullTranscriptWithTimestamp = rawTranscript.map(seg => `[${seg.start}] ${seg.text}`).join('\n');
-            
+
             document.querySelector('#copy-dropdown .dropdown-item[data-copy-type="text"]').onclick = (e) => copyToClipboard(fullTranscriptTextOnly, e.target);
             document.querySelector('#copy-dropdown .dropdown-item[data-copy-type="full"]').onclick = (e) => copyToClipboard(fullTranscriptWithTimestamp, e.target);
 
             rawTranscript.forEach(segment => {
                 const segmentEl = document.createElement('div');
                 segmentEl.className = 'transcript-segment';
-                
+
                 const timestampCol = document.createElement('div');
                 timestampCol.className = 'timestamp-col';
                 const timestampLink = document.createElement('a');
                 timestampLink.href = `${videoUrl}&t=${timeStringToSeconds(segment.start)}s`;
                 timestampLink.target = '_blank';
-                timestampLink.textContent = segment.start;
+                timestampLink.textContent = segment.start || '00:00';
                 timestampCol.appendChild(timestampLink);
 
                 const textCol = document.createElement('div');
                 textCol.className = 'text-col';
                 const textSpan = document.createElement('span');
                 textSpan.className = 'text';
-                textSpan.textContent = segment.text;
+                textSpan.textContent = segment.text || '';
                 textCol.appendChild(textSpan);
 
                 const copyCol = document.createElement('div');
@@ -196,33 +264,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 copyBtn.className = 'copy-btn';
                 copyBtn.title = 'Tùy chọn sao chép';
                 copyCol.appendChild(copyBtn);
-                
-                const popover = createCopyPopover(
-                    () => `[${segment.start}] ${segment.text}`,
-                    () => segment.text
-                );
+
+                const popover = createCopyPopover(() => `[${segment.start}] ${segment.text}`, () => segment.text);
                 copyCol.appendChild(popover);
-                
-                // --- SỬA LỖI LOGIC TẠI ĐÂY ---
+
                 copyBtn.onclick = (e) => {
                     e.stopPropagation();
-
-                    if(activePopover && activePopover !== popover) {
+                    if (activePopover && activePopover !== popover) {
                         activePopover.classList.remove('show', 'popover-bottom');
                     }
-                    
                     const buttonRect = copyBtn.getBoundingClientRect();
                     const containerRect = transcriptContent.getBoundingClientRect();
                     const popoverHeight = popover.offsetHeight || 80;
-
-                    // Nếu không đủ không gian ở trên, hiển thị popover ở dưới
+                    popover.classList.toggle('show');
                     if (buttonRect.top - popoverHeight < containerRect.top) {
                         popover.classList.add('popover-bottom');
                     } else {
                         popover.classList.remove('popover-bottom');
                     }
-
-                    popover.classList.toggle('show');
                     activePopover = popover.classList.contains('show') ? popover : null;
                 };
 
@@ -243,7 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function main() {
         const result = await chrome.storage.local.get('transcriptVideoUrl');
         const videoUrl = result.transcriptVideoUrl;
-        
+
         if (videoUrl) {
             chrome.storage.local.remove('transcriptVideoUrl');
         } else {
@@ -251,7 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loader.classList.remove('show');
             return;
         }
-        
+
         loader.classList.remove('show');
         infoPanel.classList.add('loading');
         transcriptPanel.classList.add('loading');
@@ -266,12 +325,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 infoPanel.innerHTML = '<div class="card"><h3>Không thể tải thông tin video.</h3></div>';
             })
             .finally(() => infoPanel.classList.remove('loading'));
-        
+
         transcriptPromise
             .then(response => {
-                const videoId = response[0]?.id || response[0]?.data?.videoId || getVideoIdFromUrl(videoUrl);
+                const videoId = response?.[0]?.id || response?.[0]?.data?.videoId || getVideoIdFromUrl(videoUrl);
                 renderTranscript(response, videoId);
-             })
+            })
             .catch(err => {
                 console.error("Lỗi Transcript API:", err);
                 document.getElementById('transcript-content').innerHTML = '<p class="no-transcript">Lỗi khi tải lời thoại.</p>';
@@ -285,11 +344,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleDescriptionBtn = document.getElementById('toggle-description');
     const descriptionContainer = document.getElementById('video-description-content');
     if (toggleDescriptionBtn && descriptionContainer) {
-        descriptionContainer.classList.add('collapsible');
         toggleDescriptionBtn.addEventListener('click', () => {
-            descriptionContainer.classList.toggle('collapsible');
-            toggleDescriptionBtn.textContent = descriptionContainer.classList.contains('collapsible') ? 'Xem thêm' : 'Thu gọn';
+            const isCollapsed = descriptionContainer.style.maxHeight === '100px';
+            descriptionContainer.style.maxHeight = isCollapsed ? '1000px' : '100px';
+            toggleDescriptionBtn.textContent = isCollapsed ? 'Thu gọn' : 'Xem thêm';
         });
+        // Initial setup
+        setTimeout(() => {
+             if (descriptionContainer.scrollHeight > 100) {
+                descriptionContainer.style.maxHeight = '100px';
+                toggleDescriptionBtn.style.display = 'block';
+             } else {
+                toggleDescriptionBtn.style.display = 'none';
+             }
+        }, 500);
     }
 
     const searchInput = document.getElementById('search-transcript');
@@ -321,7 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.addEventListener('click', () => {
         copyWrapper?.classList.remove('open');
-        if(activePopover) {
+        if (activePopover) {
             activePopover.classList.remove('show');
             activePopover = null;
         }

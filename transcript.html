@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Video Transcript</title>
+    <title>Video Transcript & Info</title>
     <link rel="stylesheet" href="transcript.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,45 +21,41 @@
                 </div>
                 <div class="content-wrapper">
                     <div id="video-embed-container" class="video-embed-container"></div>
-                    <div class="thumbnail-url-box">
-                        <label>Thumbnail URL</label>
-                        <div class="url-wrapper">
-                            <input type="text" id="thumbnail-url" readonly>
-                        </div>
+                    
+                    <div id="title-section" class="info-section">
+                        <h1 id="video-title">...</h1>
                     </div>
-                    <div class="channel-info">
+
+                    <div id="channel-section" class="channel-info">
                         <a id="channel-link" href="#" target="_blank">
                             <img id="channel-avatar" src="icons/icon48.png" alt="Channel Avatar">
                             <span id="channel-name">...</span>
                         </a>
                     </div>
-                    <div class="title-container item-with-copy">
-                        <h1 id="video-title">...</h1>
-                    </div>
-                    <div class="stats-bar">
-                        <div class="stat-item">
-                            <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"></path></svg>
-                            <span id="view-count">...</span>
+                    
+                    <div id="stats-section" class="stats-grid">
                         </div>
-                        <div class="stat-item">
-                            <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></svg>
-                            <span id="like-count">...</span>
-                        </div>
-                        <div class="stat-item">
-                            <svg viewBox="0 0 24 24"><path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18zM18 14H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"></path></svg>
-                            <span id="comment-count">...</span>
-                        </div>
-                    </div>
-                    <div class="description-box item-with-copy">
-                        <h3>Mô tả</h3>
-                        <div id="video-description-content" class="collapsible">
+                    
+                    <div id="id-section" class="info-section">
+                         <h3 class="section-header">Thông tin định danh</h3>
+                         </div>
+
+                    <div id="description-section" class="info-section collapsible-section">
+                        <h3 class="section-header">Mô tả</h3>
+                        <div id="video-description-content" class="collapsible-content">
                             <p id="video-description">...</p>
                         </div>
-                        <button id="toggle-description">Xem thêm</button>
+                        <button id="toggle-description" class="toggle-button">Xem thêm</button>
                     </div>
-                    <div class="tags-box item-with-copy">
-                        <h3>Tags</h3>
+
+                    <div id="tags-section" class="info-section">
+                        <h3 class="section-header">Tags</h3>
                         <div id="video-tags" class="tags-container"></div>
+                    </div>
+                    
+                    <div id="topics-section" class="info-section">
+                        <h3 class="section-header">Chủ đề (YouTube gợi ý)</h3>
+                        <div id="video-topics" class="tags-container"></div>
                     </div>
                 </div>
             </div>
@@ -84,7 +80,7 @@
                  <div class="spinner-container">
                     <div class="spinner"></div>
                 </div>
-                 </div>
+            </div>
         </main>
     </div>
     <script src="transcript.js"></script>

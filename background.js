@@ -1,7 +1,7 @@
 // Xử lý cài đặt mặc định khi tiện ích được cài đặt lần đầu
 chrome.runtime.onInstalled.addListener(() => {
     chrome.storage.sync.set({
-        isAutoCommentEnabled: true,
+        isAutoCommentEnabled: false,
         autoPercentageMin: 30,
         autoPercentageMax: 80,
         aiLanguage: 'English',
