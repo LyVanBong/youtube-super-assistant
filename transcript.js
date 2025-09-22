@@ -132,7 +132,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const { id, snippet = {}, statistics = {}, player = {}, contentDetails = {} } = videoData;
 
-        // An toàn hơn: Kiểm tra player.embedHtml
         if (player.embedHtml) {
             document.getElementById('video-embed-container').innerHTML = player.embedHtml
                 .replace(/width="\d+"/, 'width="100%"')
@@ -181,13 +180,15 @@ document.addEventListener('DOMContentLoaded', () => {
             idSection.appendChild(row);
         });
 
+        const descriptionContainer = document.getElementById('video-description-content');
         const description = document.getElementById('video-description');
         const toggleDescriptionBtn = document.getElementById('toggle-description');
+        
         description.textContent = snippet.description || "Video này không có mô tả.";
+        descriptionContainer.style.maxHeight = 'none'; // Luôn hiển thị đầy đủ
+        toggleDescriptionBtn.style.display = 'none'; // Ẩn nút "Xem thêm"
+        
         addCopyFunctionality(document.getElementById('description-section'), () => description.textContent);
-        if (!snippet.description || description.scrollHeight <= 100) {
-            if (toggleDescriptionBtn) toggleDescriptionBtn.style.display = 'none';
-        }
 
         const tagsContainer = document.getElementById('video-tags');
         if (snippet.tags && snippet.tags.length > 0) {
@@ -341,25 +342,6 @@ document.addEventListener('DOMContentLoaded', () => {
     main();
 
     // --- Gán các sự kiện còn lại ---
-    const toggleDescriptionBtn = document.getElementById('toggle-description');
-    const descriptionContainer = document.getElementById('video-description-content');
-    if (toggleDescriptionBtn && descriptionContainer) {
-        toggleDescriptionBtn.addEventListener('click', () => {
-            const isCollapsed = descriptionContainer.style.maxHeight === '100px';
-            descriptionContainer.style.maxHeight = isCollapsed ? '1000px' : '100px';
-            toggleDescriptionBtn.textContent = isCollapsed ? 'Thu gọn' : 'Xem thêm';
-        });
-        // Initial setup
-        setTimeout(() => {
-             if (descriptionContainer.scrollHeight > 100) {
-                descriptionContainer.style.maxHeight = '100px';
-                toggleDescriptionBtn.style.display = 'block';
-             } else {
-                toggleDescriptionBtn.style.display = 'none';
-             }
-        }, 500);
-    }
-
     const searchInput = document.getElementById('search-transcript');
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {

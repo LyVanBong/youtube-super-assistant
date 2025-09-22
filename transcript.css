@@ -110,7 +110,7 @@ body {
 .info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .info-row .label { color: var(--secondary-text-color); font-size: 13px; }
 .info-row .value { font-weight: 500; font-size: 13px; text-align: right; padding-left: 10px; }
-.info-row .value.monospace { font-family: monospace; }
+.info-row .value.monospace { font-family: monospace; word-break: break-all; } /* Đã thêm word-break */
 .info-row .value.capitalize { text-transform: capitalize; }
 .info-row .value.boolean-true { color: #2c974b; font-weight: bold; }
 .info-row .value.boolean-false { color: #cb2431; }
