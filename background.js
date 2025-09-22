@@ -27,18 +27,9 @@ function saveCommentToHistory(data) {
 // Lắng nghe tin nhắn từ content script hoặc popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'createComment' || request.action === 'createReply') {
-
-        chrome.storage.sync.get([
-            'aiLanguage',
-            'customPrompt',
-            'aiApiKey',
-            'accessToken'
-        ], (settings) => {
-
+        chrome.storage.sync.get(['aiLanguage', 'customPrompt', 'aiApiKey', 'accessToken'], (settings) => {
             const token = settings.accessToken || '23105d20-3812-44c9-9906-8adf1fd5e69e';
             const API_URL = `https://workflow.softty.net/webhook/${token}`;
-
-            // **PHẦN ĐƯỢC SỬA: Đã bỏ accessToken khỏi body**
             let requestBody = {
                 url: request.url,
                 timestamp: request.timestamp,
@@ -46,11 +37,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 prompt: settings.customPrompt || '',
                 apiKey: settings.aiApiKey || ''
             };
-
             if (request.action === 'createReply') {
                 requestBody.comment = request.parentComment;
             }
-
             fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -73,8 +62,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 })
                 .catch(error => sendResponse({ success: false, error: error.message }));
         });
-
-        return true; // Báo hiệu phản hồi bất đồng bộ
+        return true;
+    }
+    else if (request.action === 'openTranscriptPage') {
+        // 1. Lưu URL vào bộ nhớ tạm
+        chrome.storage.local.set({ transcriptVideoUrl: request.videoUrl }, () => {
+             // 2. Mở trang transcript sau khi đã lưu
+            const transcriptPageUrl = chrome.runtime.getURL('transcript.html');
+            chrome.tabs.create({ url: transcriptPageUrl });
+        });
+        return false; // Phản hồi đồng bộ
     }
     else if (request.action === 'isVideoInHistory') {
         const videoIdToCheck = request.videoId;
@@ -102,7 +99,6 @@ chrome.webNavigation.onHistoryStateUpdated.addListener((details) => {
     if (details.url && details.url.includes("youtube.com/watch")) {
         chrome.tabs.sendMessage(details.tabId, { action: "ytHistoryUpdated" }, () => {
             if (chrome.runtime.lastError) {
-                // Bỏ qua lỗi nếu tab không tồn tại
                 console.log(`Could not send message to tab ${details.tabId}. Error: ${chrome.runtime.lastError.message}`);
             }
         });

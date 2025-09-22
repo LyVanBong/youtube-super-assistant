@@ -13,7 +13,7 @@ let automationHasRun = false;
 let progressCheckInterval;
 let currentVideoId = null;
 
-// --- BỘ ICON SVG CHUYÊN NGHIỆP (ĐÃ SỬA LỖI CÚ PHÁP) ---
+// --- BỘ ICON SVG CHUYÊN NGHIỆP ---
 const SVG_ICONS = {
     arrowUp: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>',
     comment: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
@@ -43,22 +43,6 @@ function scrollToElement(selector, blockOption = 'center') {
         setTimeout(() => resolve(element), 1000);
     });
 }
-function waitForElement(selector, timeout = 15000) {
-    return new Promise((resolve, reject) => {
-        const interval = setInterval(() => {
-            const element = document.querySelector(selector);
-            if (element) {
-                clearInterval(interval);
-                clearTimeout(timer);
-                resolve(element);
-            }
-        }, 500);
-        const timer = setTimeout(() => {
-            clearInterval(interval);
-            reject(`Hết thời gian chờ phần tử: ${selector}`);
-        }, timeout);
-    });
-}
 function sendMessagePromise(message) {
     return new Promise((resolve, reject) => {
         chrome.runtime.sendMessage(message, (response) => {
@@ -70,6 +54,19 @@ function sendMessagePromise(message) {
 }
 
 // --- HIỆU ỨNG LOADING VÀ THÔNG BÁO ---
+function setButtonLoadingState(button, isLoading) {
+    const originalContent = button.innerHTML;
+    if (!button.dataset.originalContent) {
+        button.dataset.originalContent = originalContent;
+    }
+    if (isLoading) {
+        button.innerHTML = '<div class="super-assistant-loading-spinner"></div>';
+        button.disabled = true;
+    } else {
+        button.innerHTML = button.dataset.originalContent;
+        button.disabled = false;
+    }
+}
 function injectStyles() {
     const styleId = 'super-assistant-styles';
     if (document.getElementById(styleId)) return;
@@ -78,55 +75,20 @@ function injectStyles() {
     style.textContent = `
         @keyframes super-assistant-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .super-assistant-loading-spinner {
-            position: absolute; width: 48px; height: 48px; border-radius: 50%;
-            border: 3px solid rgba(255, 255, 255, 0.2); border-top-color: #4285F4;
+            width: 24px; height: 24px; border-radius: 50%;
+            border: 3px solid rgba(255, 255, 255, 0.3); border-top-color: #FFF;
             animation: super-assistant-spin 1s linear infinite;
         }`;
     document.head.appendChild(style);
 }
 
-function setButtonLoadingState(button, isLoading) {
-    const spinnerId = `spinner-for-${button.title.replace(/\s/g, '-')}`;
-    const svgElement = button.querySelector('svg');
-    let spinner = document.getElementById(spinnerId);
-    if (isLoading) {
-        if (!spinner) {
-            spinner = document.createElement('div');
-            spinner.id = spinnerId;
-            spinner.className = 'super-assistant-loading-spinner';
-            button.appendChild(spinner);
-        }
-        button.disabled = true;
-        if (svgElement) svgElement.style.opacity = '0.5';
-    } else {
-        if (spinner) spinner.remove();
-        button.disabled = false;
-        if (svgElement) svgElement.style.opacity = '1';
-    }
-}
 
-function showContentToast(message, isError = false) {
-    let toast = document.getElementById('super-assistant-toast');
-    if (!toast) {
-        toast = document.createElement('div');
-        toast.id = 'super-assistant-toast';
-        Object.assign(toast.style, {
-            position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)',
-            backgroundColor: '#28a745', color: 'white', padding: '12px 20px',
-            borderRadius: '6px', zIndex: '10000', fontSize: '16px',
-            opacity: '0', transition: 'opacity 0.3s ease', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-        });
-        document.body.appendChild(toast);
-    }
-    toast.textContent = message;
-    toast.style.backgroundColor = isError ? '#dc3545' : '#007bff';
-    toast.style.opacity = '1';
-    setTimeout(() => { toast.style.opacity = '0'; }, 3000);
-}
-
-// --- TÍNH NĂNG SAO CHÉP LỜI THOẠI (TẠM ẨN) ---
-function copyTranscript() {
-    showContentToast('Tính năng đang được phát triển.');
+// --- HÀNH ĐỘNG MỚI: YÊU CẦU MỞ TRANG LỜI THOẠI ---
+function handleGetTranscriptClick() {
+    chrome.runtime.sendMessage({
+        action: 'openTranscriptPage',
+        videoUrl: window.location.href 
+    });
 }
 
 // --- CHUỖI HÀNH ĐỘNG TỰ ĐỘNG ---
@@ -138,16 +100,16 @@ async function runFullAutomation(expectedVideoId) {
         await scrollToElement('ytd-comments#comments');
         await humanizedDelay();
         checkContext();
-        (await waitForElement('ytd-comment-simplebox-renderer #placeholder-area')).click();
+        (await document.querySelector('ytd-comment-simplebox-renderer #placeholder-area')).click();
         checkContext();
         const response = await sendMessagePromise({ action: 'createComment', url: window.location.href, timestamp: getVideoTimestamp() });
         checkContext();
-        const commentBox = await waitForElement('ytd-commentbox #contenteditable-root');
+        const commentBox = await document.querySelector('ytd-commentbox #contenteditable-root');
         commentBox.innerText = response.comment;
         commentBox.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
         await humanizedDelay();
         checkContext();
-        (await waitForElement('ytd-commentbox #submit-button button:not([disabled])')).click();
+        (await document.querySelector('ytd-commentbox #submit-button button:not([disabled])')).click();
         await humanizedDelay(2500, 4000);
         checkContext();
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -161,7 +123,7 @@ async function runFullAutomation(expectedVideoId) {
 async function setupVideoProgressListener() {
     if (progressCheckInterval) clearInterval(progressCheckInterval);
     try {
-        const video = await waitForElement('video.html5-main-video', 10000);
+        const video = await document.querySelector('video.html5-main-video');
         const defaults = { isAutoCommentEnabled: true, autoPercentageMin: 30, autoPercentageMax: 80 };
         chrome.storage.sync.get(defaults, (settings) => {
             if (settings.isAutoCommentEnabled === false) {
@@ -197,53 +159,63 @@ function createOrUpdateFloatingButtons() {
     const isWatchPage = window.location.href.includes('/watch');
     const containerId = 'super-assistant-floating-buttons';
     let container = document.getElementById(containerId);
+
     if (isWatchPage) {
         if (!container) {
             injectStyles();
             container = document.createElement('div');
             container.id = containerId;
             Object.assign(container.style, { position: 'fixed', bottom: '30px', right: '30px', zIndex: '9999', display: 'flex', flexDirection: 'column', gap: '10px' });
+            
             const buttonStyles = { backgroundColor: 'rgba(15, 15, 15, 0.9)', color: 'white', border: '1px solid #3f3f3f', borderRadius: '50%', width: '50px', height: '50px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3)', transition: 'all 0.2s ease' };
+            
             const createButton = (icon, title, onClick) => {
                 const btn = document.createElement('button');
                 btn.innerHTML = icon;
                 btn.title = title;
                 Object.assign(btn.style, buttonStyles);
-                btn.addEventListener('click', onClick);
+                btn.addEventListener('click', () => onClick(btn)); // Truyền nút vào hàm onClick
                 btn.onmouseover = () => { if (!btn.disabled) btn.style.transform = 'scale(1.1)'; };
                 btn.onmouseout = () => { if (!btn.disabled) btn.style.transform = 'scale(1.0)'; };
                 return btn;
             };
-            const scrollToTopBtn = createButton(SVG_ICONS.arrowUp, 'Cuộn lên trên cùng', () => {
-                setButtonLoadingState(scrollToTopBtn, true);
+
+            const scrollToTopBtn = createButton(SVG_ICONS.arrowUp, 'Cuộn lên trên cùng', (btn) => {
+                setButtonLoadingState(btn, true);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
-                setTimeout(() => setButtonLoadingState(scrollToTopBtn, false), 1000);
+                setTimeout(() => setButtonLoadingState(btn, false), 1000);
             });
-            const scrollToCommentBtn = createButton(SVG_ICONS.comment, 'Cuộn đến bình luận', () => {
-                setButtonLoadingState(scrollToCommentBtn, true);
+
+            const scrollToCommentBtn = createButton(SVG_ICONS.comment, 'Cuộn đến bình luận', (btn) => {
+                setButtonLoadingState(btn, true);
                 scrollToElement('ytd-comments#comments')
                     .then(() => new Promise(resolve => setTimeout(resolve, 500)))
                     .then(() => document.querySelector('ytd-comment-simplebox-renderer #placeholder-area')?.click())
                     .catch(console.error)
-                    .finally(() => setButtonLoadingState(scrollToCommentBtn, false));
+                    .finally(() => setButtonLoadingState(btn, false));
             });
-            const copyTranscriptBtn = createButton(SVG_ICONS.transcript, 'Sao chép Lời thoại', () => {
-                setButtonLoadingState(copyTranscriptBtn, true);
-                copyTranscript();
-                setTimeout(() => setButtonLoadingState(copyTranscriptBtn, false), 500);
+            
+            const getTranscriptBtn = createButton(SVG_ICONS.transcript, 'Xem và Sao chép Lời thoại', handleGetTranscriptClick);
+
+            const autoToggleButton = createButton('', 'Bật/Tắt Tự động Bình luận', () => { 
+                chrome.storage.sync.get('isAutoCommentEnabled', (data) => { 
+                    chrome.storage.sync.set({ isAutoCommentEnabled: !(data.isAutoCommentEnabled !== false) }); 
+                }); 
             });
-            const autoToggleButton = createButton('', 'Bật/Tắt Tự động Bình luận', () => { chrome.storage.sync.get('isAutoCommentEnabled', (data) => { chrome.storage.sync.set({ isAutoCommentEnabled: !(data.isAutoCommentEnabled !== false) }); }); });
+
             const updateToggleButtonUI = (isEnabled) => {
                 autoToggleButton.innerHTML = isEnabled ? SVG_ICONS.robot : SVG_ICONS.robotOff;
                 autoToggleButton.style.backgroundColor = isEnabled ? '#4285F4' : 'rgba(15, 15, 15, 0.9)';
             };
+
             chrome.storage.sync.get({ isAutoCommentEnabled: true }, (data) => updateToggleButtonUI(data.isAutoCommentEnabled));
             chrome.storage.onChanged.addListener((changes, namespace) => {
                 if (namespace === 'sync' && changes.isAutoCommentEnabled) {
                     updateToggleButtonUI(changes.isAutoCommentEnabled.newValue);
                 }
             });
-            container.append(scrollToTopBtn, scrollToCommentBtn, copyTranscriptBtn, autoToggleButton);
+
+            container.append(scrollToTopBtn, scrollToCommentBtn, getTranscriptBtn, autoToggleButton);
             document.body.appendChild(container);
         }
         container.style.display = 'flex';
@@ -252,6 +224,7 @@ function createOrUpdateFloatingButtons() {
     }
 }
 
+// ... (Các hàm injectAICommentButton và injectAIReplyButtons giữ nguyên)
 function injectAICommentButton() {
     const buttonsContainer = document.querySelector("ytd-commentbox #buttons");
     if (!buttonsContainer || buttonsContainer.querySelector('.ai-comment-btn-super')) return;
@@ -313,6 +286,7 @@ function injectAIReplyButtons() {
         });
     });
 }
+
 
 // --- BỘ QUẢN LÝ VÀ KHỞI TẠO CHÍNH ---
 function initialize() {

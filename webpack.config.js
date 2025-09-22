@@ -13,7 +13,8 @@ module.exports = (env, argv) => {
       content: './content.js',
       popup: './popup.js',
       history: './history.js',
-      settings: './settings.js'
+      settings: './settings.js',
+      transcript: './transcript.js',
     },
     output: {
       path: path.resolve(__dirname, 'dist'),
@@ -30,6 +31,8 @@ module.exports = (env, argv) => {
           { from: 'history.css', to: 'history.css' },
           { from: 'settings.html', to: 'settings.html' },
           { from: 'settings.css', to: 'settings.css' },
+          { from: 'transcript.html', to: 'transcript.html' },
+          { from: 'transcript.css', to: 'transcript.css' },
           { from: 'icons', to: 'icons' },
         ],
       }),
