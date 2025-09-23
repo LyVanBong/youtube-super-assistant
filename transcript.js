@@ -148,14 +148,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const statsGrid = document.getElementById('stats-section');
         const statsData = [
-            { label: "Lượt xem", value: Number(statistics.viewCount || 0).toLocaleString('vi-VN'), icon: '<svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"></path></svg>' },
-            { label: "Lượt thích", value: Number(statistics.likeCount || 0).toLocaleString('vi-VN'), icon: '<svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></svg>' },
-            { label: "Bình luận", value: Number(statistics.commentCount || 0).toLocaleString('vi-VN'), icon: '<svg viewBox="0 0 24 24"><path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18zM18 14H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"></path></svg>' },
-            { label: "Thời lượng", value: parseISO8601Duration(contentDetails.duration), icon: '<svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"></path></svg>' },
-            { label: "Ngày đăng", value: snippet.publishedAt ? new Date(snippet.publishedAt).toLocaleDateString('vi-VN') : 'Không rõ', icon: '<svg viewBox="0 0 24 24"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"></path></svg>' },
-            { label: "Chất lượng", value: contentDetails.definition?.toUpperCase() || 'N/A', icon: '<svg viewBox="0 0 24 24"><path d="M19 4H5c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 11H9.5v-2h-2v2H6V9h1.5v2.5h2V9H11v6zm7-1h-1.75l-1.75-2.25V15H13V9h1.5v2.25L16.25 9H18l-2.25 3L18 15z"></path></svg>' },
-            { label: "Phụ đề", value: contentDetails.caption === 'true' ? 'Có' : 'Không', icon: '<svg viewBox="0 0 24 24"><path d="M4 4h16v12H4z" fill-opacity=".3"/><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10h2v2H6zm0 4h8v2H6zm10-4h2v2h-2zm-4-4h2v2h-2z"/></svg>' },
-            { label: "Danh mục", value: categoryMap[snippet.categoryId] || 'Không xác định', icon: '<svg viewBox="0 0 24 24"><path d="M12 2l-5.5 9h11z"/><circle cx="12" cy="16" r="2"/><path d="M20 22H4v-2h16z"/></svg>' }
+            { label: "Lượt xem", value: Number(statistics.viewCount || 0).toLocaleString('vi-VN'), icon: `<svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"></path></svg>` },
+            { label: "Lượt thích", value: Number(statistics.likeCount || 0).toLocaleString('vi-VN'), icon: `<svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></svg>` },
+            { label: "Bình luận", value: Number(statistics.commentCount || 0).toLocaleString('vi-VN'), icon: `<svg viewBox="0 0 24 24"><path d="M21.99 4c0-1.1-.89-2-1.99-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18zM18 14H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"></path></svg>` },
+            { label: "Thời lượng", value: parseISO8601Duration(contentDetails.duration), icon: `<svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"></path></svg>` },
+            { label: "Ngày đăng", value: snippet.publishedAt ? new Date(snippet.publishedAt).toLocaleDateString('vi-VN') : 'Không rõ', icon: `<svg viewBox="0 0 24 24"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"></path></svg>` },
+            { label: "Chất lượng", value: contentDetails.definition?.toUpperCase() || 'N/A', icon: `<svg viewBox="0 0 24 24"><path d="M19 4H5c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 11H9.5v-2h-2v2H6V9h1.5v2.5h2V9H11v6zm7-1h-1.75l-1.75-2.25V15H13V9h1.5v2.25L16.25 9H18l-2.25 3L18 15z"></path></svg>` },
+            { label: "Phụ đề", value: contentDetails.caption === 'true' ? 'Có' : 'Không', icon: `<svg viewBox="0 0 24 24"><path d="M4 4h16v12H4z" fill-opacity=".3"/><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM6 10h2v2H6zm0 4h8v2H6zm10-4h2v2h-2zm-4-4h2v2h-2z"/></svg>` },
+            { label: "Danh mục", value: categoryMap[snippet.categoryId] || 'Không xác định', icon: `<svg viewBox="0 0 24 24"><path d="M12 2l-5.5 9h11z"/><circle cx="12" cy="16" r="2"/><path d="M20 22H4v-2h16z"/></svg>` }
         ];
         statsGrid.innerHTML = statsData.map(item => `
             <div class="stat-item">
@@ -185,8 +185,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const toggleDescriptionBtn = document.getElementById('toggle-description');
         
         description.textContent = snippet.description || "Video này không có mô tả.";
-        descriptionContainer.style.maxHeight = 'none'; // Luôn hiển thị đầy đủ
-        toggleDescriptionBtn.style.display = 'none'; // Ẩn nút "Xem thêm"
+        descriptionContainer.style.maxHeight = 'none';
+        toggleDescriptionBtn.style.display = 'none';
         
         addCopyFunctionality(document.getElementById('description-section'), () => description.textContent);
 
