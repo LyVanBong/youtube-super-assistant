@@ -1,15 +1,23 @@
-// Xử lý cài đặt mặc định khi tiện ích được cài đặt lần đầu
-chrome.runtime.onInstalled.addListener(() => {
-    chrome.storage.sync.set({
-        isAutoCommentEnabled: false,
-        autoPercentageMin: 30,
-        autoPercentageMax: 80,
-        aiLanguage: 'English',
-        customPrompt: '',
-        aiApiKey: '',
-        accessToken: '23105d20-3812-44c9-9906-8adf1fd5e69e'
-    });
-    chrome.storage.local.set({ commentHistory: [], transcriptHistory: [], summaryHistory: [] });
+// Xử lý các tác vụ khi tiện ích được cài đặt hoặc cập nhật
+chrome.runtime.onInstalled.addListener((details) => {
+    // Chỉ thực hiện khi người dùng cài đặt lần đầu tiên
+    if (details.reason === 'install') {
+        // 1. Thiết lập các giá trị mặc định
+        chrome.storage.sync.set({
+            isAutoCommentEnabled: false,
+            autoPercentageMin: 30,
+            autoPercentageMax: 80,
+            aiLanguage: 'English',
+            customPrompt: '',
+            aiApiKey: '',
+            accessToken: '23105d20-3812-44c9-9906-8adf1fd5e69e'
+        });
+        chrome.storage.local.set({ commentHistory: [], transcriptHistory: [], summaryHistory: [] });
+
+        // 2. Mở trang hướng dẫn sử dụng trong một tab mới
+        const guideUrl = "https://blogs.softty.net/tien-ich-ai-tang-tuong-tac-youtube/";
+        chrome.tabs.create({ url: guideUrl });
+    }
 });
 
 // Hàm lưu trữ lịch sử bình luận
@@ -52,10 +60,10 @@ async function fetchFromApi(body, queryParam) {
     if (!response.ok) {
         throw new Error(`Lỗi API (${queryParam || 'comment'}): ${response.status} ${response.statusText}`);
     }
-    
+
     // Luôn trả về text để handler tự xử lý.
     // Điều này giúp xử lý các trường hợp API trả về lỗi dạng text thay vì JSON.
-    return response.text(); 
+    return response.text();
 }
 
 
@@ -106,7 +114,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 if (!summaryText || summaryText.includes("không có phụ đề") || summaryText.includes("No transcript")) {
                     throw new Error("Không thể tóm tắt video này vì không có lời thoại.");
                 }
-                
+
                 saveSummaryToHistory({
                     videoUrl: request.url,
                     summaryContent: summaryText,
@@ -134,7 +142,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         }
                     }
                 }
-                
+
                 if (Array.isArray(rawTranscript) && rawTranscript.length > 0) {
                     const fullText = rawTranscript.map(seg => seg.text).join(' ');
                     sendResponse({ success: true, content: fullText });
@@ -171,6 +179,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Theo dõi sự kiện điều hướng trang để thông báo cho content script
 chrome.webNavigation.onHistoryStateUpdated.addListener((details) => {
     if (details.url && details.url.includes("youtube.com/watch")) {
-        chrome.tabs.sendMessage(details.tabId, { action: "ytHistoryUpdated" }).catch(err => {});
+        chrome.tabs.sendMessage(details.tabId, { action: "ytHistoryUpdated" }).catch(err => { });
     }
 });
