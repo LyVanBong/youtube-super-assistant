@@ -1,22 +1,32 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <title>Transcript History - YouTube Super Assistant</title>
     <link rel="stylesheet" href="transcript_history.css">
 </head>
+
 <body>
     <div class="container">
-        <div id="loader-overlay"><div class="spinner"></div></div>
+        <div id="loader-overlay">
+            <div class="spinner"></div>
+        </div>
 
         <h1>Lịch sử xem Transcript</h1>
         <div class="controls">
-            <button id="refresh-btn">🔄 Làm mới</button>
-            <button id="clear-history-btn">🗑️ Xóa Lịch sử</button>
+            <div class="search-box">
+                <input type="search" id="search-input" placeholder="Tìm kiếm theo tiêu đề, kênh...">
+            </div>
+            <div class="button-group">
+                <button id="refresh-btn">🔄 Làm mới</button>
+                <button id="clear-history-btn">🗑️ Xóa Lịch sử</button>
+            </div>
         </div>
         <div id="history-grid"></div>
         <p id="no-history-msg" style="display: none;">Chưa có video nào trong lịch sử.</p>
     </div>
     <script src="transcript_history.js"></script>
 </body>
+
 </html>

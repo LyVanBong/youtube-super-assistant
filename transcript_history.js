@@ -4,6 +4,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const clearHistoryBtn = document.getElementById('clear-history-btn');
     const refreshBtn = document.getElementById('refresh-btn');
     const loaderOverlay = document.getElementById('loader-overlay');
+    const searchInput = document.getElementById('search-input');
+
+    let fullHistory = []; // Biến để lưu trữ toàn bộ lịch sử
 
     function showLoader() { loaderOverlay.classList.add('show'); }
     function hideLoader() { loaderOverlay.classList.remove('show'); }
@@ -44,10 +47,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function loadHistory() {
         showLoader();
-        // Thêm một chút delay để người dùng thấy hiệu ứng loading
         setTimeout(() => {
             chrome.storage.local.get({ transcriptHistory: [] }, (result) => {
-                renderHistory(result.transcriptHistory);
+                fullHistory = result.transcriptHistory; // Lưu vào biến toàn cục
+                renderHistory(fullHistory);
                 hideLoader();
             });
         }, 300);
@@ -63,6 +66,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadHistory();
             });
         }
+    });
+
+    // --- Gán sự kiện cho ô tìm kiếm ---
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        if (!searchTerm) {
+            renderHistory(fullHistory); // Nếu ô tìm kiếm trống, hiển thị lại đầy đủ
+            return;
+        }
+        const filteredHistory = fullHistory.filter(item =>
+            item.title.toLowerCase().includes(searchTerm) ||
+            item.channelTitle.toLowerCase().includes(searchTerm)
+        );
+        renderHistory(filteredHistory);
     });
 
     // Tải lịch sử lần đầu khi trang được mở

@@ -19,7 +19,6 @@ body {
     max-width: 1200px;
     margin: 0 auto;
     position: relative;
-    /* Thêm để định vị loader */
 }
 
 h1 {
@@ -74,12 +73,26 @@ h1 {
 
 .controls {
     display: flex;
-    /* Sửa lại để các nút nằm cạnh nhau */
-    justify-content: flex-end;
-    /* Đẩy các nút về bên phải */
-    gap: 10px;
-    /* Thêm khoảng cách giữa các nút */
+    justify-content: space-between;
+    /* Căn chỉnh các phần tử */
+    align-items: center;
     margin-bottom: 20px;
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+.search-box input {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    width: 300px;
+    font-size: 14px;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
 }
 
 .controls button {
