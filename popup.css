@@ -79,7 +79,6 @@ body {
     text-align: left;
 }
 
-/* Xóa margin-bottom của card cuối cùng trong vùng cuộn */
 .main-content .card:last-child {
     margin-bottom: 0;
 }
@@ -119,15 +118,24 @@ body {
     gap: 10px;
 }
 
+.action-buttons-grid.three-cols {
+    grid-template-columns: 1fr 1fr 1fr;
+    /* Cập nhật layout cho 3 nút */
+}
+
 .ai-action-btn {
-    padding: 10px;
-    font-size: 14px;
+    padding: 10px 5px;
+    /* Giảm padding ngang */
+    font-size: 13px;
+    /* Giảm font size */
     font-weight: 500;
     border-radius: 6px;
     border: 1px solid var(--border-color);
     background-color: #f6f8fa;
     cursor: pointer;
     transition: background-color 0.2s;
+    line-height: 1.3;
+    text-align: center;
 }
 
 .ai-action-btn:hover:not(:disabled) {
@@ -243,6 +251,7 @@ body {
     bottom: 0;
     background-color: #ccc;
     transition: .4s;
+    border-radius: 34px;
 }
 
 .slider:before {
@@ -254,6 +263,7 @@ body {
     bottom: 4px;
     background-color: white;
     transition: .4s;
+    border-radius: 50%;
 }
 
 input:checked+.slider {
@@ -262,14 +272,6 @@ input:checked+.slider {
 
 input:checked+.slider:before {
     transform: translateX(22px);
-}
-
-.slider.round {
-    border-radius: 34px;
-}
-
-.slider.round:before {
-    border-radius: 50%;
 }
 
 /* Footer Nav */

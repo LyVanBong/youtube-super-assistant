@@ -9,7 +9,6 @@ chrome.runtime.onInstalled.addListener(() => {
         aiApiKey: '',
         accessToken: '23105d20-3812-44c9-9906-8adf1fd5e69e'
     });
-    // Thêm summaryHistory vào local storage
     chrome.storage.local.set({ commentHistory: [], transcriptHistory: [], summaryHistory: [] });
 });
 
@@ -25,7 +24,7 @@ function saveCommentToHistory(data) {
     });
 }
 
-// **HÀM MỚI**: Lưu trữ lịch sử tóm tắt
+// Hàm lưu trữ lịch sử tóm tắt
 function saveSummaryToHistory(data) {
     chrome.storage.local.get({ summaryHistory: [] }, (result) => {
         const history = result.summaryHistory;
@@ -38,7 +37,7 @@ function saveSummaryToHistory(data) {
 }
 
 
-// Hàm gọi API chung
+// Hàm gọi API chung (ĐÃ SỬA LỖI)
 async function fetchFromApi(body, queryParam) {
     const settings = await chrome.storage.sync.get(['accessToken']);
     const token = settings.accessToken || '23105d20-3812-44c9-9906-8adf1fd5e69e';
@@ -53,16 +52,18 @@ async function fetchFromApi(body, queryParam) {
     if (!response.ok) {
         throw new Error(`Lỗi API (${queryParam || 'comment'}): ${response.status} ${response.statusText}`);
     }
-    return response.text();
+    
+    // Luôn trả về text để handler tự xử lý.
+    // Điều này giúp xử lý các trường hợp API trả về lỗi dạng text thay vì JSON.
+    return response.text(); 
 }
 
 
 // Lắng nghe tin nhắn từ content script hoặc popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    // Bọc logic trong một hàm async để sử dụng await
     const handleMessage = async () => {
         try {
-            const settings = await chrome.storage.sync.get(['aiLanguage', 'customPrompt', 'aiApiKey', 'accessToken']);
+            const settings = await chrome.storage.sync.get(['aiLanguage', 'customPrompt', 'aiApiKey']);
             const baseBody = {
                 url: request.url,
                 language: settings.aiLanguage || 'English',
@@ -88,12 +89,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 sendResponse({ success: true, content: commentText });
 
             } else if (request.action === 'summarizeVideo') {
-                const summaryText = await fetchFromApi(baseBody, 'summarize');
-                if (summaryText.includes("không có phụ đề") || summaryText.includes("No transcript")) {
-                    throw new Error("Không thể tóm tắt video này vì không có lời thoại (phụ đề).");
-                }
+                // **LOGIC SỬA LỖI BẮT ĐẦU TỪ ĐÂY**
+                const responseText = await fetchFromApi(baseBody, 'summarize');
+                let summaryText;
 
-                // **CẬP NHẬT**: Lưu tóm tắt vào lịch sử
+                try {
+                    // Thử parse text dưới dạng JSON
+                    const summaryJson = JSON.parse(responseText);
+                    summaryText = summaryJson.summary;
+                } catch (e) {
+                    // Nếu parse lỗi, nghĩa là API đã trả về một chuỗi lỗi (ví dụ: "This video has no transcript...")
+                    summaryText = responseText;
+                }
+                // **KẾT THÚC LOGIC SỬA LỖI**
+
+                if (!summaryText || summaryText.includes("không có phụ đề") || summaryText.includes("No transcript")) {
+                    throw new Error("Không thể tóm tắt video này vì không có lời thoại.");
+                }
+                
                 saveSummaryToHistory({
                     videoUrl: request.url,
                     summaryContent: summaryText,
@@ -102,11 +115,37 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
                 sendResponse({ success: true, content: summaryText });
 
+            } else if (request.action === 'getTranscriptText') {
+                const responseText = await fetchFromApi(baseBody, 'transcripts');
+                const transcriptData = JSON.parse(responseText); // Lời thoại thường ổn định hơn và luôn là JSON
+                let rawTranscript = null;
+
+                if (!transcriptData || transcriptData.length === 0 || transcriptData[0]?.message === 'no transcript') {
+                    throw new Error("Video này không có lời thoại.");
+                } else {
+                    const transcriptResponse = transcriptData.find(item => item?.data?.transcripts);
+                    if (transcriptResponse) {
+                        const data = transcriptResponse.data;
+                        const langCodeEntry = data.language_code?.[0];
+                        const langCode = langCodeEntry?.code;
+                        if (langCode && data.transcripts[langCode]) {
+                            const transcripts = data.transcripts[langCode];
+                            rawTranscript = transcripts.custom || transcripts.default || transcripts.auto;
+                        }
+                    }
+                }
+                
+                if (Array.isArray(rawTranscript) && rawTranscript.length > 0) {
+                    const fullText = rawTranscript.map(seg => seg.text).join(' ');
+                    sendResponse({ success: true, content: fullText });
+                } else {
+                    throw new Error("Không tìm thấy nội dung lời thoại hợp lệ.");
+                }
+
             } else if (request.action === 'openTranscriptPage') {
                 await chrome.storage.local.set({ transcriptVideoUrl: request.videoUrl });
                 const transcriptPageUrl = chrome.runtime.getURL('transcript.html');
                 await chrome.tabs.create({ url: transcriptPageUrl });
-                // Không cần sendResponse cho hành động này
 
             } else if (request.action === 'isVideoInHistory') {
                 const { commentHistory } = await chrome.storage.local.get({ commentHistory: [] });
@@ -125,13 +164,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     };
 
     handleMessage();
-    return true; // Bắt buộc để cho phép sendResponse hoạt động bất đồng bộ
+    return true;
 });
 
 
 // Theo dõi sự kiện điều hướng trang để thông báo cho content script
 chrome.webNavigation.onHistoryStateUpdated.addListener((details) => {
     if (details.url && details.url.includes("youtube.com/watch")) {
-        chrome.tabs.sendMessage(details.tabId, { action: "ytHistoryUpdated" }).catch(err => console.log(`Could not send message to tab ${details.tabId}. It might be closed or reloading.`));
+        chrome.tabs.sendMessage(details.tabId, { action: "ytHistoryUpdated" }).catch(err => {});
     }
 });

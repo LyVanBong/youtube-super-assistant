@@ -13,16 +13,17 @@ let automationHasRun = false;
 let progressCheckInterval;
 let currentVideoId = null;
 
-// --- BỘ ICON SVG CHUYÊN NGHIỆP ---
+// --- BỘ ICON SVG MỚI, CHI TIẾT HƠN ---
 const SVG_ICONS = {
-    arrowUp: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>',
-    comment: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
+    arrowUp: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>',
+    comment: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><line x1="9" y1="9" x2="15" y2="9"></line><line x1="9" y1="13" x2="13" y2="13"></line></svg>',
     robot: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4m0 16v-4m8-8h-4m-8 0H4m15.5 2.5l-3-3m-10 0l-3 3m10 5l3 3m-10 0l3-3"></path><circle cx="12" cy="12" r="2"></circle><path d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12z"></path></svg>',
     robotOff: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>',
-    transcript: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>'
+    transcript: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h10M6 12h12M6 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>',
+    summarize: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-1.2 0-2.4.6-3 1.7A3.5 3.5 0 0 0 6.5 8c0 2.4 2 4.3 4.5 5.5A3.5 3.5 0 0 0 14.5 17c1.8 0 3.2-1.3 3.5-3 .6-.4 1-1 1-1.8 0-1.4-1.3-2.5-2.8-2.5-1 0-1.8.5-2.2 1.2-.5-.3-1-.5-1.5-.5A3.7 3.7 0 0 0 9 9.3c.4-.2.8-.3 1.2-.3a3.5 3.5 0 0 0 3.5-3.5c0-.3 0-.7-.2-1-.3-.4-.6-.8-1-1.2-1-.8-2.3-1.3-3.7-1.3z"/><path d="M20.2 18.8a2.3 2.3 0 0 0-1.2-3.8 2.3 2.3 0 0 0-3.8-1.2A2.3 2.3 0 0 0 14 15a2.3 2.3 0 0 0-1.2 3.8 2.3 2.3 0 0 0 3.8 1.2 2.3 2.3 0 0 0 3.6-1.2z"/></svg>'
 };
 
-// --- CÁC HÀM TRỢ GIÚP (HELPER FUNCTIONS) ---
+// --- CÁC HÀM TRỢ GIÚP ---
 const humanizedDelay = (ms = 1000) => new Promise(res => setTimeout(res, ms));
 function getVideoIdFromUrl(url) { try { return new URLSearchParams(new URL(url).search).get('v'); } catch (e) { return null; } }
 function getVideoTimestamp() {
@@ -40,17 +41,16 @@ function scrollToElement(selector, blockOption = 'center') {
         const element = document.querySelector(selector);
         if (!element) return reject(new Error(`Không tìm thấy phần tử: ${selector}`));
         element.scrollIntoView({ behavior: 'smooth', block: blockOption });
-        // **Quan trọng**: theo dõi sự kiện scroll để biết khi nào hoàn tất
         let scrollTimeout;
         const scrollListener = () => {
             clearTimeout(scrollTimeout);
             scrollTimeout = setTimeout(() => {
                 window.removeEventListener('scroll', scrollListener);
                 resolve(element);
-            }, 150); // Nếu không có sự kiện scroll trong 150ms, coi như đã xong
+            }, 150);
         };
         window.addEventListener('scroll', scrollListener);
-        scrollListener(); // Gọi lần đầu
+        scrollListener();
     });
 }
 function sendMessagePromise(message) {
@@ -63,7 +63,6 @@ function sendMessagePromise(message) {
     });
 }
 
-// ... (Các hàm injectStyles, handleGetTranscriptClick, setupVideoProgressListener, UI injections giữ nguyên)
 // --- HIỆU ỨNG LOADING VÀ THÔNG BÁO ---
 function setButtonLoadingState(button, isLoading) {
     if (!button) return;
@@ -78,6 +77,23 @@ function setButtonLoadingState(button, isLoading) {
         button.disabled = false;
     }
 }
+
+// **HÀM MỚI**: Hiển thị thông báo tùy chỉnh
+function showCustomNotification(message, isError = false) {
+    const notificationId = 'super-assistant-notification';
+    let notification = document.getElementById(notificationId);
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = notificationId;
+        document.body.appendChild(notification);
+    }
+    notification.textContent = message;
+    notification.className = isError ? 'show error' : 'show';
+    setTimeout(() => {
+        notification.classList.remove('show');
+    }, 4000);
+}
+
 function injectStyles() {
     const styleId = 'super-assistant-styles';
     if (document.getElementById(styleId)) return;
@@ -86,8 +102,7 @@ function injectStyles() {
     style.textContent = `
         @keyframes super-assistant-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .super-assistant-loading-spinner {
-            display: inline-block;
-            width: 20px; height: 20px; border-radius: 50%;
+            display: inline-block; width: 20px; height: 20px; border-radius: 50%;
             border: 3px solid rgba(255, 255, 255, 0.3); border-top-color: #FFF;
             animation: super-assistant-spin 1s linear infinite; margin: auto;
         }
@@ -121,10 +136,23 @@ function injectStyles() {
         }
         .super-assistant-action-btn .super-assistant-loading-spinner { width: 24px; height: 24px; }
         .super-assistant-action-btn:hover:not(:disabled) { transform: scale(1.1); }
+        
+        /* CSS cho Thông báo tùy chỉnh */
+        #super-assistant-notification {
+            position: fixed; top: 20px; right: 20px; z-index: 10000;
+            background-color: #28a745; color: white; padding: 12px 20px;
+            border-radius: 8px; font-size: 14px; font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            opacity: 0; transform: translateY(-20px);
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        #super-assistant-notification.show { opacity: 1; transform: translateY(0); }
+        #super-assistant-notification.error { background-color: #dc3545; }
     `;
     document.head.appendChild(style);
 }
 
+// ... (Các hàm logic khác giữ nguyên)
 // --- CÁC HÀM LOGIC CHÍNH ---
 function handleGetTranscriptClick() {
     chrome.runtime.sendMessage({
@@ -132,7 +160,6 @@ function handleGetTranscriptClick() {
         videoUrl: window.location.href
     });
 }
-//... (Hàm runFullAutomation và setupVideoProgressListener giữ nguyên như trước)
 async function runFullAutomation(expectedVideoId, commentContent = null) {
     const checkContext = () => { if (getVideoIdFromUrl(window.location.href) !== expectedVideoId) throw new Error('Bối cảnh trang đã thay đổi, dừng tự động.'); };
     try {
@@ -206,7 +233,7 @@ function setupVideoProgressListener() {
         }, 3000);
     });
 }
-//... (Các hàm UI injection khác giữ nguyên)
+// --- CÁC HÀM CHÈN GIAO DIỆN (UI INJECTION) ---
 function createOrUpdateFloatingButtons() {
     const isWatchPage = window.location.href.includes('/watch');
     const containerId = 'super-assistant-fab-container';
@@ -247,23 +274,39 @@ function createOrUpdateFloatingButtons() {
                     .catch(console.error).finally(() => setButtonLoadingState(btn, false));
             });
             const getTranscriptBtn = createButton(SVG_ICONS.transcript, 'Xem Lời thoại', handleGetTranscriptClick);
+
+            // **NÚT TÓM TẮT MỚI**
+            const summarizeBtn = createButton(SVG_ICONS.summarize, 'Tóm tắt video (AI)', async (btn) => {
+                setButtonLoadingState(btn, true);
+                try {
+                    const response = await sendMessagePromise({ action: 'summarizeVideo', url: window.location.href });
+                    navigator.clipboard.writeText(response.content);
+                    showCustomNotification('Đã tóm tắt và sao chép vào clipboard!');
+                } catch (error) {
+                    showCustomNotification(`Lỗi: ${error.message}`, true);
+                } finally {
+                    setButtonLoadingState(btn, false);
+                }
+            });
+
             const autoToggleButton = createButton('', 'Bật/Tắt Tự động', () => {
                 chrome.storage.sync.get('isAutoCommentEnabled', data => {
                     chrome.storage.sync.set({ isAutoCommentEnabled: !data.isAutoCommentEnabled });
                 });
             }, 'super-assistant-auto-toggle-btn');
 
-            actionsMenu.append(scrollToTopBtn, scrollToCommentBtn, getTranscriptBtn, autoToggleButton);
+            // **THÊM NÚT TÓM TẮT VÀO MENU**
+            actionsMenu.append(scrollToTopBtn, scrollToCommentBtn, getTranscriptBtn, summarizeBtn, autoToggleButton);
             container.append(actionsMenu, mainButton);
             document.body.appendChild(container);
         }
         container.style.display = 'flex';
-        updateAutoToggleButtonUI(); // Cập nhật trạng thái nút khi tạo
+        updateAutoToggleButtonUI();
     } else {
         if (container) container.style.display = 'none';
     }
 }
-
+//... (Các hàm updateAutoToggleButtonUI, injectAICommentButton, injectAIReplyButtons giữ nguyên)
 function updateAutoToggleButtonUI() {
     const btn = document.getElementById('super-assistant-auto-toggle-btn');
     if (!btn) return;
@@ -332,7 +375,6 @@ function injectAIReplyButtons() {
         });
     });
 }
-
 // --- BỘ QUẢN LÝ VÀ KHỞI TẠO CHÍNH ---
 function initialize() {
     if (observer) observer.disconnect();
@@ -360,11 +402,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     } else if (request.action === "getTimestamp") {
         sendResponse({ timestamp: getVideoTimestamp() });
     } else if (request.action === "commentNow") {
-        // **LOGIC MỚI CHO "BÌNH LUẬN NGAY"**
         runFullAutomation(getVideoIdFromUrl(window.location.href), request.content)
             .catch(err => alert(`Không thể tự động bình luận: ${err.message}`));
     }
-    return true; // Cho phép sendResponse bất đồng bộ
+    return true;
 });
 
 // Lắng nghe thay đổi cài đặt để cập nhật nút toggle
