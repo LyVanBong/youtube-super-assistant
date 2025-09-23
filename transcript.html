@@ -16,83 +16,86 @@
     </div>
 
     <div class="container">
-        <aside id="info-panel" class="info-panel loading">
-            <div class="card">
-                <div class="card-content-wrapper">
+        <h1>Video Transcript & Info</h1>
+        <div class="main-content">
+            <aside id="info-panel" class="info-panel loading">
+                <div class="card">
+                    <div class="card-content-wrapper">
+                        <div class="spinner-container">
+                            <div class="spinner"></div>
+                        </div>
+                        <div class="content-wrapper">
+                            <div id="video-embed-container" class="video-embed-container"></div>
+
+                            <div id="title-section" class="info-section">
+                                <h1 id="video-title">...</h1>
+                            </div>
+
+                            <div id="channel-section" class="channel-info">
+                                <a id="channel-link" href="#" target="_blank">
+                                    <img id="channel-avatar" src="icons/icon48.png" alt="Channel Avatar">
+                                    <span id="channel-name">...</span>
+                                </a>
+                            </div>
+
+                            <div id="stats-section" class="stats-grid">
+                            </div>
+
+                            <div id="id-section" class="info-section">
+                                <h3 class="section-header">Thông tin định danh</h3>
+                            </div>
+
+                            <div id="description-section" class="info-section collapsible-section">
+                                <h3 class="section-header">Mô tả</h3>
+                                <div id="video-description-content" class="collapsible-content">
+                                    <p id="video-description">...</p>
+                                </div>
+                                <button id="toggle-description" class="toggle-button">Xem thêm</button>
+                            </div>
+
+                            <div id="tags-section" class="info-section">
+                                <h3 class="section-header">Tags</h3>
+                                <div id="video-tags" class="tags-container"></div>
+                            </div>
+
+                            <div id="topics-section" class="info-section">
+                                <h3 class="section-header">Chủ đề (YouTube gợi ý)</h3>
+                                <div id="video-topics" class="tags-container"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <main id="transcript-panel" class="transcript-panel loading">
+                <div class="toolbar">
+                    <input type="search" id="search-transcript" placeholder="Tìm kiếm trong lời thoại...">
+                    <div class="copy-options-wrapper">
+                        <button id="copy-all-btn" class="main-copy-btn" title="Tùy chọn sao chép">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                                <path
+                                    d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z">
+                                </path>
+                            </svg>
+                            <span>Sao chép</span>
+                            <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                viewBox="0 0 24 24">
+                                <path d="M7 10l5 5 5-5z"></path>
+                            </svg>
+                        </button>
+                        <div id="copy-dropdown" class="dropdown-menu">
+                            <div class="dropdown-item" data-copy-type="text">Sao chép văn bản</div>
+                            <div class="dropdown-item" data-copy-type="full">Sao chép kèm thời gian</div>
+                        </div>
+                    </div>
+                </div>
+                <div id="transcript-content" class="card">
                     <div class="spinner-container">
                         <div class="spinner"></div>
                     </div>
-                    <div class="content-wrapper">
-                        <div id="video-embed-container" class="video-embed-container"></div>
-
-                        <div id="title-section" class="info-section">
-                            <h1 id="video-title">...</h1>
-                        </div>
-
-                        <div id="channel-section" class="channel-info">
-                            <a id="channel-link" href="#" target="_blank">
-                                <img id="channel-avatar" src="icons/icon48.png" alt="Channel Avatar">
-                                <span id="channel-name">...</span>
-                            </a>
-                        </div>
-
-                        <div id="stats-section" class="stats-grid">
-                        </div>
-
-                        <div id="id-section" class="info-section">
-                            <h3 class="section-header">Thông tin định danh</h3>
-                        </div>
-
-                        <div id="description-section" class="info-section collapsible-section">
-                            <h3 class="section-header">Mô tả</h3>
-                            <div id="video-description-content" class="collapsible-content">
-                                <p id="video-description">...</p>
-                            </div>
-                            <button id="toggle-description" class="toggle-button">Xem thêm</button>
-                        </div>
-
-                        <div id="tags-section" class="info-section">
-                            <h3 class="section-header">Tags</h3>
-                            <div id="video-tags" class="tags-container"></div>
-                        </div>
-
-                        <div id="topics-section" class="info-section">
-                            <h3 class="section-header">Chủ đề (YouTube gợi ý)</h3>
-                            <div id="video-topics" class="tags-container"></div>
-                        </div>
-                    </div>
                 </div>
-            </div>
-        </aside>
-
-        <main id="transcript-panel" class="transcript-panel loading">
-            <div class="toolbar">
-                <input type="search" id="search-transcript" placeholder="Tìm kiếm trong lời thoại...">
-                <div class="copy-options-wrapper">
-                    <button id="copy-all-btn" class="main-copy-btn" title="Tùy chọn sao chép">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                            <path
-                                d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z">
-                            </path>
-                        </svg>
-                        <span>Sao chép</span>
-                        <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                            viewBox="0 0 24 24">
-                            <path d="M7 10l5 5 5-5z"></path>
-                        </svg>
-                    </button>
-                    <div id="copy-dropdown" class="dropdown-menu">
-                        <div class="dropdown-item" data-copy-type="text">Sao chép văn bản</div>
-                        <div class="dropdown-item" data-copy-type="full">Sao chép kèm thời gian</div>
-                    </div>
-                </div>
-            </div>
-            <div id="transcript-content" class="card">
-                <div class="spinner-container">
-                    <div class="spinner"></div>
-                </div>
-            </div>
-        </main>
+            </main>
+        </div>
     </div>
     <script src="transcript.js"></script>
 </body>
