@@ -10,11 +10,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const commentHistoryBody = document.getElementById('comment-history-body');
     const noCommentMsg = document.getElementById('no-comment-history');
 
+    // Summary History Elements
+    const summaryHistoryBody = document.getElementById('summary-history-body');
+    const noSummaryMsg = document.getElementById('no-summary-history');
+
     // Transcript History Elements
     const transcriptHistoryGrid = document.getElementById('transcript-history-grid');
     const noTranscriptMsg = document.getElementById('no-transcript-history');
 
     let fullCommentHistory = [];
+    let fullSummaryHistory = [];
     let fullTranscriptHistory = [];
     let activeTab = 'comment-history';
 
@@ -32,7 +37,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
             document.getElementById(activeTab).classList.add('active');
 
-            // Trigger search again for the new active tab
             filterAndRender();
         });
     });
@@ -42,12 +46,17 @@ document.addEventListener('DOMContentLoaded', () => {
         showLoader();
         Promise.all([
             chrome.storage.local.get({ commentHistory: [] }),
-            chrome.storage.local.get({ transcriptHistory: [] })
-        ]).then(([commentResult, transcriptResult]) => {
+            chrome.storage.local.get({ transcriptHistory: [] }),
+            chrome.storage.local.get({ summaryHistory: [] }) // Tải thêm lịch sử tóm tắt
+        ]).then(([commentResult, transcriptResult, summaryResult]) => {
             fullCommentHistory = commentResult.commentHistory;
             fullTranscriptHistory = transcriptResult.transcriptHistory;
+            fullSummaryHistory = summaryResult.summaryHistory;
+
             renderCommentHistory(fullCommentHistory);
             renderTranscriptHistory(fullTranscriptHistory);
+            renderSummaryHistory(fullSummaryHistory);
+
             hideLoader();
         });
     }
@@ -78,6 +87,34 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     }
+
+    // **HÀM MỚI**: Render lịch sử tóm tắt
+    function renderSummaryHistory(data) {
+        summaryHistoryBody.innerHTML = '';
+        const hasData = data.length > 0;
+        noSummaryMsg.style.display = hasData ? 'none' : 'block';
+        document.getElementById('summary-history-table').style.display = hasData ? 'table' : 'none';
+
+        if (hasData) {
+            data.forEach(item => {
+                const videoId = new URL(item.videoUrl).searchParams.get('v');
+                const thumbnailUrl = videoId ? `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` : 'icons/icon128.png';
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <div class="video-info">
+                            <img src="${thumbnailUrl}" alt="Thumbnail" class="video-thumbnail">
+                            <a href="${item.videoUrl}" target="_blank">${item.videoUrl}</a>
+                        </div>
+                    </td>
+                    <td><div class="summary-content">${item.summaryContent}</div></td>
+                    <td>${new Date(item.realTimestamp).toLocaleString('vi-VN')}</td>
+                `;
+                summaryHistoryBody.appendChild(row);
+            });
+        }
+    }
+
 
     function renderTranscriptHistory(data) {
         transcriptHistoryGrid.innerHTML = '';
@@ -116,6 +153,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.videoUrl.toLowerCase().includes(searchTerm)
             );
             renderCommentHistory(filtered);
+        } else if (activeTab === 'summary-history') {
+            const filtered = fullSummaryHistory.filter(item =>
+                item.summaryContent.toLowerCase().includes(searchTerm) ||
+                item.videoUrl.toLowerCase().includes(searchTerm)
+            );
+            renderSummaryHistory(filtered);
         } else { // transcript-history
             const filtered = fullTranscriptHistory.filter(item =>
                 item.title.toLowerCase().includes(searchTerm) ||
@@ -129,10 +172,22 @@ document.addEventListener('DOMContentLoaded', () => {
     refreshBtn.addEventListener('click', loadAllHistory);
 
     clearHistoryBtn.addEventListener('click', () => {
-        const key = activeTab === 'comment-history' ? 'commentHistory' : 'transcriptHistory';
-        const message = activeTab === 'comment-history'
-            ? 'Bạn có chắc chắn muốn xóa toàn bộ lịch sử bình luận không?'
-            : 'Bạn có chắc chắn muốn xóa toàn bộ lịch sử xem lời thoại không?';
+        let key, message;
+        switch (activeTab) {
+            case 'comment-history':
+                key = 'commentHistory';
+                message = 'Bạn có chắc chắn muốn xóa toàn bộ lịch sử bình luận không?';
+                break;
+            case 'summary-history':
+                key = 'summaryHistory';
+                message = 'Bạn có chắc chắn muốn xóa toàn bộ lịch sử tóm tắt không?';
+                break;
+            case 'transcript-history':
+                key = 'transcriptHistory';
+                message = 'Bạn có chắc chắn muốn xóa toàn bộ lịch sử xem lời thoại không?';
+                break;
+            default: return;
+        }
 
         if (confirm(message)) {
             showLoader();

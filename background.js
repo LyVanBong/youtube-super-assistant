@@ -9,7 +9,8 @@ chrome.runtime.onInstalled.addListener(() => {
         aiApiKey: '',
         accessToken: '23105d20-3812-44c9-9906-8adf1fd5e69e'
     });
-    chrome.storage.local.set({ commentHistory: [], transcriptHistory: [] });
+    // Thêm summaryHistory vào local storage
+    chrome.storage.local.set({ commentHistory: [], transcriptHistory: [], summaryHistory: [] });
 });
 
 // Hàm lưu trữ lịch sử bình luận
@@ -23,6 +24,19 @@ function saveCommentToHistory(data) {
         chrome.storage.local.set({ commentHistory: history });
     });
 }
+
+// **HÀM MỚI**: Lưu trữ lịch sử tóm tắt
+function saveSummaryToHistory(data) {
+    chrome.storage.local.get({ summaryHistory: [] }, (result) => {
+        const history = result.summaryHistory;
+        history.unshift(data);
+        if (history.length > 100) {
+            history.pop();
+        }
+        chrome.storage.local.set({ summaryHistory: history });
+    });
+}
+
 
 // Hàm gọi API chung
 async function fetchFromApi(body, queryParam) {
@@ -78,6 +92,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 if (summaryText.includes("không có phụ đề") || summaryText.includes("No transcript")) {
                     throw new Error("Không thể tóm tắt video này vì không có lời thoại (phụ đề).");
                 }
+
+                // **CẬP NHẬT**: Lưu tóm tắt vào lịch sử
+                saveSummaryToHistory({
+                    videoUrl: request.url,
+                    summaryContent: summaryText,
+                    realTimestamp: new Date().toISOString()
+                });
+
                 sendResponse({ success: true, content: summaryText });
 
             } else if (request.action === 'openTranscriptPage') {

@@ -159,21 +159,21 @@ h1 {
     padding: 50px 20px;
 }
 
-/* Comment History Table */
-#comment-history-table {
+/* Comment & Summary History Table */
+.history-table {
     width: 100%;
     border-collapse: collapse;
 }
 
-#comment-history-table th,
-#comment-history-table td {
+.history-table th,
+.history-table td {
     padding: 12px 15px;
     border-bottom: 1px solid #ddd;
     text-align: left;
     vertical-align: middle;
 }
 
-#comment-history-table th {
+.history-table th {
     background-color: #f2f2f2;
 }
 
@@ -190,8 +190,9 @@ h1 {
     object-fit: cover;
 }
 
-.comment-content {
-    max-height: 80px;
+.comment-content,
+.summary-content {
+    max-height: 100px;
     overflow-y: auto;
 }
 
