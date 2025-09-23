@@ -55,9 +55,8 @@ function sendMessagePromise(message) {
 
 // --- HIỆU ỨNG LOADING VÀ THÔNG BÁO ---
 function setButtonLoadingState(button, isLoading) {
-    const originalContent = button.innerHTML;
     if (!button.dataset.originalContent) {
-        button.dataset.originalContent = originalContent;
+        button.dataset.originalContent = button.innerHTML;
     }
     if (isLoading) {
         button.innerHTML = '<div class="super-assistant-loading-spinner"></div>';
@@ -69,7 +68,7 @@ function setButtonLoadingState(button, isLoading) {
 }
 function injectStyles() {
     const styleId = 'super-assistant-styles';
-    if (document.getElementById(styleId)) return;
+    if (document.getElementById(styleId)) document.getElementById(styleId).remove(); // Xóa style cũ để cập nhật
     const style = document.createElement('style');
     style.id = styleId;
     style.textContent = `
@@ -78,7 +77,81 @@ function injectStyles() {
             width: 24px; height: 24px; border-radius: 50%;
             border: 3px solid rgba(255, 255, 255, 0.3); border-top-color: #FFF;
             animation: super-assistant-spin 1s linear infinite;
-        }`;
+        }
+        
+        /* New styles for Floating Action Button */
+        #super-assistant-fab-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column-reverse; /* Các nút hành động sẽ hiện ra bên trên nút chính */
+            align-items: center;
+        }
+
+        #super-assistant-main-btn {
+            background-color: rgba(15, 15, 15, 0.9);
+            border: 1px solid #3f3f3f;
+            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s ease;
+            padding: 0;
+            margin-top: 15px; /* Khoảng cách giữa nút chính và các nút hành động */
+        }
+
+        #super-assistant-main-btn img {
+            width: 32px;
+            height: 32px;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        #super-assistant-fab-container:hover #super-assistant-main-btn img {
+            transform: rotate(360deg);
+        }
+
+        #super-assistant-actions-menu {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            visibility: hidden; /* Mặc định ẩn đi */
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.2s ease-in-out;
+        }
+
+        #super-assistant-fab-container:hover #super-assistant-actions-menu {
+            visibility: visible; /* Hiện ra khi di chuột vào container */
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .super-assistant-action-btn {
+            background-color: rgba(15, 15, 15, 0.9);
+            color: white;
+            border: 1px solid #3f3f3f;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .super-assistant-action-btn:hover:not(:disabled) {
+            transform: scale(1.1);
+        }
+    `;
     document.head.appendChild(style);
 }
 
@@ -87,7 +160,7 @@ function injectStyles() {
 function handleGetTranscriptClick() {
     chrome.runtime.sendMessage({
         action: 'openTranscriptPage',
-        videoUrl: window.location.href 
+        videoUrl: window.location.href
     });
 }
 
@@ -157,7 +230,7 @@ async function setupVideoProgressListener() {
 // --- CÁC HÀM CHÈN GIAO DIỆN (UI INJECTION) ---
 function createOrUpdateFloatingButtons() {
     const isWatchPage = window.location.href.includes('/watch');
-    const containerId = 'super-assistant-floating-buttons';
+    const containerId = 'super-assistant-fab-container';
     let container = document.getElementById(containerId);
 
     if (isWatchPage) {
@@ -165,18 +238,22 @@ function createOrUpdateFloatingButtons() {
             injectStyles();
             container = document.createElement('div');
             container.id = containerId;
-            Object.assign(container.style, { position: 'fixed', bottom: '30px', right: '30px', zIndex: '9999', display: 'flex', flexDirection: 'column', gap: '10px' });
-            
-            const buttonStyles = { backgroundColor: 'rgba(15, 15, 15, 0.9)', color: 'white', border: '1px solid #3f3f3f', borderRadius: '50%', width: '50px', height: '50px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3)', transition: 'all 0.2s ease' };
-            
-            const createButton = (icon, title, onClick) => {
+
+            const mainButton = document.createElement('button');
+            mainButton.id = 'super-assistant-main-btn';
+            const logoUrl = chrome.runtime.getURL('icons/icon48.png');
+            mainButton.innerHTML = `<img src="${logoUrl}" alt="Super Assistant">`;
+
+            const actionsMenu = document.createElement('div');
+            actionsMenu.id = 'super-assistant-actions-menu';
+
+            const createButton = (icon, title, onClick, id) => {
                 const btn = document.createElement('button');
                 btn.innerHTML = icon;
                 btn.title = title;
-                Object.assign(btn.style, buttonStyles);
-                btn.addEventListener('click', () => onClick(btn)); // Truyền nút vào hàm onClick
-                btn.onmouseover = () => { if (!btn.disabled) btn.style.transform = 'scale(1.1)'; };
-                btn.onmouseout = () => { if (!btn.disabled) btn.style.transform = 'scale(1.0)'; };
+                btn.className = 'super-assistant-action-btn';
+                if (id) btn.id = id;
+                btn.addEventListener('click', () => onClick(btn));
                 return btn;
             };
 
@@ -194,18 +271,21 @@ function createOrUpdateFloatingButtons() {
                     .catch(console.error)
                     .finally(() => setButtonLoadingState(btn, false));
             });
-            
+
             const getTranscriptBtn = createButton(SVG_ICONS.transcript, 'Xem và Sao chép Lời thoại', handleGetTranscriptClick);
 
-            const autoToggleButton = createButton('', 'Bật/Tắt Tự động Bình luận', () => { 
-                chrome.storage.sync.get('isAutoCommentEnabled', (data) => { 
-                    chrome.storage.sync.set({ isAutoCommentEnabled: !(data.isAutoCommentEnabled !== false) }); 
-                }); 
-            });
+            const autoToggleButton = createButton('', 'Bật/Tắt Tự động Bình luận', () => {
+                chrome.storage.sync.get('isAutoCommentEnabled', (data) => {
+                    chrome.storage.sync.set({ isAutoCommentEnabled: !(data.isAutoCommentEnabled !== false) });
+                });
+            }, 'super-assistant-auto-toggle-btn');
 
             const updateToggleButtonUI = (isEnabled) => {
-                autoToggleButton.innerHTML = isEnabled ? SVG_ICONS.robot : SVG_ICONS.robotOff;
-                autoToggleButton.style.backgroundColor = isEnabled ? '#4285F4' : 'rgba(15, 15, 15, 0.9)';
+                const btn = document.getElementById('super-assistant-auto-toggle-btn');
+                if (btn) {
+                    btn.innerHTML = isEnabled ? SVG_ICONS.robot : SVG_ICONS.robotOff;
+                    btn.style.backgroundColor = isEnabled ? '#4285F4' : 'rgba(15, 15, 15, 0.9)';
+                }
             };
 
             chrome.storage.sync.get({ isAutoCommentEnabled: true }, (data) => updateToggleButtonUI(data.isAutoCommentEnabled));
@@ -215,7 +295,8 @@ function createOrUpdateFloatingButtons() {
                 }
             });
 
-            container.append(scrollToTopBtn, scrollToCommentBtn, getTranscriptBtn, autoToggleButton);
+            actionsMenu.append(scrollToTopBtn, scrollToCommentBtn, getTranscriptBtn, autoToggleButton);
+            container.append(actionsMenu, mainButton);
             document.body.appendChild(container);
         }
         container.style.display = 'flex';
