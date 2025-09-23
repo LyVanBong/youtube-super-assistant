@@ -19,9 +19,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const autoToggle = document.getElementById('auto-toggle');
     const settingsBtn = document.getElementById('settingsBtn');
+    const languageSelect = document.getElementById('ai-language-select');
+    const versionInfoEl = document.getElementById('version-info');
 
     let currentTab = null;
-    let lastAction = null; // Lưu hành động cuối cùng ('comment' hoặc 'summary')
+    let lastAction = null;
 
     // --- Quản lý Trạng thái UI ---
     function setUiState(state) {
@@ -34,7 +36,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 ? 'Đang lấy lời thoại và tóm tắt...'
                 : 'Đang tạo bình luận...';
         } else if (state === 'result') {
-            // **CẬP NHẬT LOGIC UI CHO KẾT QUẢ**
             const isSummary = lastAction === 'summary';
             commentNowBtn.classList.toggle('hidden', isSummary);
             resultTextarea.classList.toggle('summary-mode', isSummary);
@@ -85,6 +86,35 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // --- Hàm tải danh sách ngôn ngữ ---
+    async function populateLanguages() {
+        try {
+            const response = await fetch('https://restcountries.com/v3.1/independent?status=true&fields=languages');
+            if (!response.ok) throw new Error('Network response was not ok');
+            const countries = await response.json();
+            const languageMap = new Map();
+            countries.forEach(country => {
+                if (country.languages) {
+                    for (const code in country.languages) {
+                        const name = country.languages[code];
+                        if (!languageMap.has(name)) languageMap.set(name, name);
+                    }
+                }
+            });
+            const sortedLanguages = [...languageMap.keys()].sort((a, b) => a.localeCompare(b));
+            languageSelect.innerHTML = '';
+            sortedLanguages.forEach(langName => {
+                const option = document.createElement('option');
+                option.value = langName;
+                option.textContent = langName;
+                languageSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Failed to fetch languages:', error);
+            languageSelect.innerHTML = '<option value="English">English</option><option value="Vietnamese">Tiếng Việt</option>';
+        }
+    }
+
     // --- Gán các Sự kiện ---
     createCommentBtn.addEventListener('click', () => handleAiAction('comment'));
     summarizeBtn.addEventListener('click', () => handleAiAction('summary'));
@@ -104,7 +134,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     commentNowBtn.addEventListener('click', () => {
         if (!currentTab) return;
-        // **GỬI HÀNH ĐỘNG MỚI: commentNow**
         chrome.tabs.sendMessage(currentTab.id, {
             action: "commentNow",
             content: resultTextarea.value
@@ -121,11 +150,26 @@ document.addEventListener('DOMContentLoaded', function () {
         chrome.storage.sync.set({ isAutoCommentEnabled: autoToggle.checked });
     });
 
+    languageSelect.addEventListener('change', () => {
+        chrome.storage.sync.set({ aiLanguage: languageSelect.value });
+    });
+
     // --- Khởi tạo Popup ---
     async function initialize() {
-        // Tải cài đặt
-        chrome.storage.sync.get({ isAutoCommentEnabled: true }, (data) => {
+        // Hiển thị phiên bản
+        const manifest = chrome.runtime.getManifest();
+        versionInfoEl.textContent = `Phiên bản hiện tại: ${manifest.version}`;
+
+        // Tải danh sách ngôn ngữ, sau đó tải các cài đặt khác
+        await populateLanguages();
+
+        chrome.storage.sync.get({ isAutoCommentEnabled: true, aiLanguage: 'English' }, (data) => {
             autoToggle.checked = data.isAutoCommentEnabled;
+            if ([...languageSelect.options].some(o => o.value === data.aiLanguage)) {
+                languageSelect.value = data.aiLanguage;
+            } else {
+                languageSelect.value = 'English';
+            }
         });
 
         // Lấy thông tin tab hiện tại
@@ -139,7 +183,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 createCommentBtn.disabled = false;
                 summarizeBtn.disabled = false;
 
-                // Kiểm tra lịch sử
                 const response = await sendMessageToBackground({ action: 'isVideoInHistory', videoId: videoId });
                 if (response.isInHistory) {
                     historyStatusEl.textContent = 'Trạng thái: ✅ Đã có trong lịch sử bình luận.';

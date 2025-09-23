@@ -13,53 +13,72 @@
         <h3>Super Assistant</h3>
     </div>
 
-    <div class="card" id="video-info-card">
-        <h4>Thông tin Video</h4>
-        <div class="video-info-container">
-            <p id="video-title">Hãy mở một video YouTube...</p>
-            <p id="history-status">Trạng thái: Đang kiểm tra...</p>
-        </div>
-    </div>
-
-    <div class="card" id="ai-actions-card">
-        <h4>Trung tâm AI</h4>
-        <div id="ai-actions-default">
-            <div class="action-buttons-grid">
-                <button id="createCommentBtn" class="ai-action-btn">✨ Tạo bình luận</button>
-                <button id="summarizeBtn" class="ai-action-btn">📄 Tóm tắt Video</button>
+    <div class="main-content">
+        <div class="card" id="video-info-card">
+            <h4>Thông tin Video</h4>
+            <div class="video-info-container">
+                <p id="video-title">Hãy mở một video YouTube...</p>
+                <p id="history-status">Trạng thái: Đang kiểm tra...</p>
             </div>
         </div>
 
-        <div id="ai-actions-loading" class="hidden">
-            <div class="spinner"></div>
-            <p id="loading-status">Đang xử lý, vui lòng chờ...</p>
-        </div>
-
-        <div id="ai-actions-result" class="hidden">
-            <textarea id="ai-result-textarea" rows="6" placeholder="Kết quả từ AI sẽ xuất hiện ở đây..."></textarea>
-            <div class="result-actions">
-                <button id="copyBtn">Sao chép</button>
-                <button id="commentNowBtn">Bình luận ngay</button>
-                <button id="regenerateBtn">Tạo lại</button>
-                <button id="backBtn">Quay lại</button>
+        <div class="card" id="ai-actions-card">
+            <h4>Trung tâm AI</h4>
+            <div id="ai-actions-default">
+                <div class="action-buttons-grid">
+                    <button id="createCommentBtn" class="ai-action-btn">✨ Tạo bình luận</button>
+                    <button id="summarizeBtn" class="ai-action-btn">📄 Tóm tắt Video</button>
+                </div>
+            </div>
+            <div id="ai-actions-loading" class="hidden">
+                <div class="spinner"></div>
+                <p id="loading-status">Đang xử lý, vui lòng chờ...</p>
+            </div>
+            <div id="ai-actions-result" class="hidden">
+                <textarea id="ai-result-textarea" rows="6" placeholder="Kết quả từ AI sẽ xuất hiện ở đây..."></textarea>
+                <div class="result-actions">
+                    <button id="copyBtn">Sao chép</button>
+                    <button id="commentNowBtn">Bình luận ngay</button>
+                    <button id="regenerateBtn">Tạo lại</button>
+                    <button id="backBtn">Quay lại</button>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="card" id="quick-settings-card">
-        <h4>Cài đặt nhanh</h4>
-        <div class="setting-row">
-            <label for="auto-toggle">Tự động bình luận</label>
-            <label class="switch">
-                <input type="checkbox" id="auto-toggle">
-                <span class="slider round"></span>
-            </label>
+        <div class="card" id="quick-settings-card">
+            <h4>Cài đặt nhanh</h4>
+            <div class="setting-row">
+                <label for="auto-toggle">Tự động bình luận</label>
+                <label class="switch">
+                    <input type="checkbox" id="auto-toggle">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+            <div class="setting-row">
+                <label for="ai-language-select">Ngôn ngữ AI</label>
+                <select id="ai-language-select">
+                    <option disabled selected>Đang tải...</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="footer-nav">
+            <a href="activity_history.html" target="_blank" class="button" id="viewHistoryBtn">📜 Trung tâm Hoạt
+                động</a>
+            <a href="#" id="settingsBtn" class="button secondary">⚙️ Mở Cài đặt</a>
         </div>
     </div>
 
-    <div class="footer-nav">
-        <a href="activity_history.html" target="_blank" class="button" id="viewHistoryBtn">📜 Trung tâm Hoạt động</a>
-        <a href="#" id="settingsBtn" class="button secondary">⚙️ Mở Cài đặt</a>
+    <div class="app-footer">
+        <span id="version-info"></span>
+        <a href="about.html" target="_blank" id="about-link" title="Giới thiệu & Hỗ trợ">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+        </a>
     </div>
 
     <script src="popup.js"></script>
