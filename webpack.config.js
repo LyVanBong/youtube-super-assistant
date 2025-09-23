@@ -16,6 +16,7 @@ module.exports = (env, argv) => {
       settings: './settings.js',
       transcript: './transcript.js',
       transcript_history: './transcript_history.js',
+      about: './about.js',
     },
     output: {
       path: path.resolve(__dirname, 'dist'),
@@ -36,6 +37,8 @@ module.exports = (env, argv) => {
           { from: 'transcript.css', to: 'transcript.css' },
           { from: 'transcript_history.html', to: 'transcript_history.html' },
           { from: 'transcript_history.css', to: 'transcript_history.css' },
+          { from: 'about.html', to: 'about.html' },
+          { from: 'about.css', to: 'about.css' },
           { from: 'icons', to: 'icons' },
         ],
       }),

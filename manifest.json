@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "YouTube Super Assistant",
-  "version": "9.0",
+  "version": "10.0",
   "description": "Trợ lý tự động cho YouTube: tạo bình luận, trả lời, cuộn trang và hơn thế nữa.",
   "permissions": [
     "scripting",
@@ -43,7 +43,8 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "icons/icon48.png"
+        "icons/icon48.png",
+        "about.html"
       ],
       "matches": [
         "*://*.youtube.com/*"
