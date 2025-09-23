@@ -3,21 +3,18 @@
     --primary-hover-color: #cc0000;
     --secondary-color: #007bff;
     --secondary-hover-color: #0056b3;
-    --tertiary-color: #28a745; /* Màu mới */
-    --tertiary-hover-color: #218838; /* Màu mới */
     --background-color: #f9f9f9;
     --card-background-color: #ffffff;
     --text-color: #333;
     --border-color: #ddd;
     --border-radius: 8px;
-    --box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 body {
     font-family: Arial, sans-serif;
     width: 320px;
     padding: 15px;
-    text-align: center;
     background-color: var(--background-color);
     color: var(--text-color);
     margin: 0;
@@ -39,7 +36,6 @@ body {
 .header h3 {
     margin: 0;
     font-size: 18px;
-    font-weight: 600;
 }
 
 .card {
@@ -60,10 +56,26 @@ body {
     padding-bottom: 5px;
 }
 
-button, a.button {
+.video-info-container {
+    font-size: 14px;
+    color: #555;
+    font-style: italic;
+    min-height: 30px;
+    display: flex;
+    align-items: center;
+}
+
+#video-title {
+    margin: 0;
+    font-weight: bold;
+    font-style: normal;
+}
+
+button,
+a.button {
     box-sizing: border-box;
     width: 100%;
-    padding: 10px 15px;
+    padding: 10px;
     font-size: 16px;
     cursor: pointer;
     color: white;
@@ -78,15 +90,27 @@ button, a.button {
     transition: background-color 0.2s;
 }
 
-#createCommentBtn { background-color: var(--primary-color); }
-#createCommentBtn:hover:not(:disabled) { background-color: var(--primary-hover-color); }
-#createCommentBtn:disabled { background-color: #a5a5a5; cursor: not-allowed; }
+#createCommentBtn {
+    background-color: var(--primary-color);
+}
 
-#viewHistoryBtn { background-color: var(--secondary-color); }
-#viewHistoryBtn:hover { background-color: var(--secondary-hover-color); }
+#createCommentBtn:hover:not(:disabled) {
+    background-color: var(--primary-hover-color);
+}
 
-#viewTranscriptHistoryBtn { background-color: var(--tertiary-color); }
-#viewTranscriptHistoryBtn:hover { background-color: var(--tertiary-hover-color); }
+#createCommentBtn:disabled {
+    background-color: #a5a5a5;
+    cursor: not-allowed;
+}
+
+#viewHistoryBtn {
+    background-color: var(--secondary-color);
+    margin-bottom: 10px;
+}
+
+#viewHistoryBtn:hover {
+    background-color: var(--secondary-hover-color);
+}
 
 .spinner {
     width: 18px;
@@ -98,34 +122,72 @@ button, a.button {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .setting-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
 }
 
-/* The switch - https://www.w3schools.com/howto/howto_css_switch.asp */
-.switch { position: relative; display: inline-block; width: 50px; height: 28px; }
-.switch input { opacity: 0; width: 0; height: 0; }
-.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; }
-.slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; }
-input:checked + .slider { background-color: var(--primary-color); }
-input:focus + .slider { box-shadow: 0 0 1px var(--primary-color); }
-input:checked + .slider:before { transform: translateX(22px); }
-.slider.round { border-radius: 34px; }
-.slider.round:before { border-radius: 50%; }
-
-#result {
-    margin-top: 15px;
-    padding: 10px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    min-height: 40px;
-    text-align: left;
-    word-wrap: break-word;
-    background-color: #fff;
+.setting-row label {
     font-size: 14px;
+}
+
+/* The switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 28px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+}
+
+input:checked+.slider {
+    background-color: var(--primary-color);
+}
+
+input:checked+.slider:before {
+    transform: translateX(22px);
+}
+
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
 }

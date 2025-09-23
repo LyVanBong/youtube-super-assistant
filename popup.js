@@ -1,12 +1,13 @@
 document.addEventListener('DOMContentLoaded', function () {
-    // Lấy các element từ DOM
+    // --- Get elements ---
     const createCommentBtn = document.getElementById('createCommentBtn');
-    const resultDiv = document.getElementById('result');
     const btnIcon = document.getElementById('btn-icon');
     const btnText = document.getElementById('btn-text');
     const settingsBtn = document.getElementById('settingsBtn');
+    const autoToggle = document.getElementById('auto-toggle');
+    const videoTitleEl = document.getElementById('video-title');
 
-    // --- Quản lý trạng thái loading của nút tạo bình luận ---
+    // --- Loading state manager ---
     function setLoading(isLoading) {
         if (isLoading) {
             createCommentBtn.disabled = true;
@@ -19,26 +20,20 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // --- XỬ LÝ SỰ KIỆN CHO NÚT CÀI ĐẶT ---
-    // Đây là phần quan trọng nhất để sửa lỗi
-    if (settingsBtn) {
-        settingsBtn.addEventListener('click', (event) => {
-            event.preventDefault(); // Ngăn hành động mặc định của thẻ <a>
-            chrome.runtime.openOptionsPage(); // Mở trang được định nghĩa trong "options_page" của manifest.json
-        });
-    }
+    // --- Event Handlers ---
+    settingsBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        chrome.runtime.openOptionsPage();
+    });
 
-    // --- Xử lý sự kiện click nút tạo bình luận ---
+    autoToggle.addEventListener('change', () => {
+        chrome.storage.sync.set({ isAutoCommentEnabled: autoToggle.checked });
+    });
+
     createCommentBtn.addEventListener('click', async () => {
         setLoading(true);
-        resultDiv.textContent = ''; 
-
         try {
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-            if (!tab.url || !tab.url.includes("youtube.com/watch")) {
-                throw new Error('Vui lòng mở một video YouTube.');
-            }
-
             const response = await chrome.tabs.sendMessage(tab.id, { action: "getTimestamp" });
             const timestamp = response ? response.timestamp : '00:00';
 
@@ -48,17 +43,43 @@ document.addEventListener('DOMContentLoaded', function () {
                 timestamp: timestamp
             }, (response) => {
                 if (chrome.runtime.lastError) {
-                    resultDiv.textContent = `Lỗi: ${chrome.runtime.lastError.message}`;
+                    alert(`Lỗi: ${chrome.runtime.lastError.message}`);
                 } else if (response && response.success) {
-                    resultDiv.textContent = `Đã tạo: ${response.comment}`;
+                    alert(`Đã tạo thành công! Nội dung đã được sao chép vào clipboard.\n\nNội dung: ${response.comment}`);
+                    navigator.clipboard.writeText(response.comment);
                 } else {
-                    resultDiv.textContent = `Lỗi từ API: ${response ? response.error : 'Không rõ'}`;
+                    alert(`Lỗi từ API: ${response ? response.error : 'Không rõ'}`);
                 }
                 setLoading(false);
             });
         } catch (error) {
-            resultDiv.textContent = `Lỗi: ${error.message}`;
+            alert(`Lỗi: ${error.message}`);
             setLoading(false);
         }
     });
+
+    // --- Initialization ---
+    async function initialize() {
+        // Load auto-comment setting
+        chrome.storage.sync.get({ isAutoCommentEnabled: true }, (data) => {
+            autoToggle.checked = data.isAutoCommentEnabled;
+        });
+
+        // Check current tab and update UI
+        try {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (tab && tab.url && tab.url.includes("youtube.com/watch")) {
+                videoTitleEl.textContent = tab.title.replace(' - YouTube', '');
+                createCommentBtn.disabled = false;
+            } else {
+                videoTitleEl.textContent = 'Mở một video YouTube để bắt đầu.';
+                createCommentBtn.disabled = true;
+            }
+        } catch (error) {
+            videoTitleEl.textContent = 'Không thể lấy thông tin tab.';
+            createCommentBtn.disabled = true;
+        }
+    }
+
+    initialize();
 });

@@ -1,14 +1,23 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8">
     <title>YouTube Assistant</title>
     <link rel="stylesheet" href="popup.css">
 </head>
+
 <body>
     <div class="header">
         <img src="icons/icon48.png" alt="Logo">
         <h3>Super Assistant</h3>
+    </div>
+
+    <div class="card">
+        <h4>Thông tin Video</h4>
+        <div id="video-info" class="video-info-container">
+            <p id="video-title">Hãy mở một video YouTube...</p>
+        </div>
     </div>
 
     <div class="card">
@@ -17,13 +26,19 @@
             <span id="btn-icon">✨</span>
             <span id="btn-text">Tạo bình luận AI</span>
         </button>
+        <div class="setting-row">
+            <label for="auto-toggle">Tự động bình luận</label>
+            <label class="switch">
+                <input type="checkbox" id="auto-toggle">
+                <span class="slider round"></span>
+            </label>
+        </div>
     </div>
 
+    <a href="activity_history.html" target="_blank" class="button" id="viewHistoryBtn">📜 Trung tâm Hoạt động</a>
     <a href="#" id="settingsBtn" class="button" style="background-color: #6c757d;">⚙️ Mở Cài đặt</a>
-    <a href="history.html" target="_blank" class="button" id="viewHistoryBtn">Lịch sử Bình luận</a>
-    <a href="transcript_history.html" target="_blank" class="button" id="viewTranscriptHistoryBtn">Lịch sử Transcript</a>
 
-    <div id="result">Kết quả sẽ hiển thị ở đây...</div>
     <script src="popup.js"></script>
 </body>
+
 </html>
