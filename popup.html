@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>YouTube Assistant</title>
+    <title>YouTube Super Assistant</title>
     <link rel="stylesheet" href="popup.css">
 </head>
 
@@ -13,19 +13,41 @@
         <h3>Super Assistant</h3>
     </div>
 
-    <div class="card">
+    <div class="card" id="video-info-card">
         <h4>Thông tin Video</h4>
-        <div id="video-info" class="video-info-container">
+        <div class="video-info-container">
             <p id="video-title">Hãy mở một video YouTube...</p>
+            <p id="history-status">Trạng thái: Đang kiểm tra...</p>
         </div>
     </div>
 
-    <div class="card">
-        <h4>Tác vụ nhanh</h4>
-        <button id="createCommentBtn">
-            <span id="btn-icon">✨</span>
-            <span id="btn-text">Tạo bình luận AI</span>
-        </button>
+    <div class="card" id="ai-actions-card">
+        <h4>Trung tâm AI</h4>
+        <div id="ai-actions-default">
+            <div class="action-buttons-grid">
+                <button id="createCommentBtn" class="ai-action-btn">✨ Tạo bình luận</button>
+                <button id="summarizeBtn" class="ai-action-btn">📄 Tóm tắt Video</button>
+            </div>
+        </div>
+
+        <div id="ai-actions-loading" class="hidden">
+            <div class="spinner"></div>
+            <p id="loading-status">Đang xử lý, vui lòng chờ...</p>
+        </div>
+
+        <div id="ai-actions-result" class="hidden">
+            <textarea id="ai-result-textarea" rows="6" placeholder="Kết quả từ AI sẽ xuất hiện ở đây..."></textarea>
+            <div class="result-actions">
+                <button id="copyBtn">Sao chép</button>
+                <button id="commentNowBtn">Bình luận ngay</button>
+                <button id="regenerateBtn">Tạo lại</button>
+                <button id="backBtn">Quay lại</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" id="quick-settings-card">
+        <h4>Cài đặt nhanh</h4>
         <div class="setting-row">
             <label for="auto-toggle">Tự động bình luận</label>
             <label class="switch">
@@ -35,8 +57,10 @@
         </div>
     </div>
 
-    <a href="activity_history.html" target="_blank" class="button" id="viewHistoryBtn">📜 Trung tâm Hoạt động</a>
-    <a href="#" id="settingsBtn" class="button" style="background-color: #6c757d;">⚙️ Mở Cài đặt</a>
+    <div class="footer-nav">
+        <a href="activity_history.html" target="_blank" class="button" id="viewHistoryBtn">📜 Trung tâm Hoạt động</a>
+        <a href="#" id="settingsBtn" class="button secondary">⚙️ Mở Cài đặt</a>
+    </div>
 
     <script src="popup.js"></script>
 </body>

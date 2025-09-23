@@ -6,14 +6,14 @@
     --background-color: #f9f9f9;
     --card-background-color: #ffffff;
     --text-color: #333;
-    --border-color: #ddd;
+    --border-color: #e1e4e8;
     --border-radius: 8px;
-    --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 body {
-    font-family: Arial, sans-serif;
-    width: 320px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    width: 350px;
     padding: 15px;
     background-color: var(--background-color);
     color: var(--text-color);
@@ -40,6 +40,7 @@ body {
 
 .card {
     background-color: var(--card-background-color);
+    border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
     padding: 15px;
     margin-bottom: 10px;
@@ -49,98 +50,129 @@ body {
 
 .card h4 {
     margin-top: 0;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     font-size: 14px;
-    color: #555;
+    color: #586069;
     border-bottom: 1px solid var(--border-color);
-    padding-bottom: 5px;
+    padding-bottom: 8px;
+    font-weight: 600;
 }
 
-.video-info-container {
+/* Card 1: Video Info */
+.video-info-container #video-title {
     font-size: 14px;
-    color: #555;
-    font-style: italic;
-    min-height: 30px;
-    display: flex;
-    align-items: center;
+    font-weight: 600;
+    margin: 0 0 5px 0;
 }
 
-#video-title {
+.video-info-container #history-status {
+    font-size: 12px;
+    color: #586069;
     margin: 0;
-    font-weight: bold;
-    font-style: normal;
+    font-style: italic;
 }
 
-button,
-a.button {
-    box-sizing: border-box;
-    width: 100%;
+.video-info-container #history-status.in-history {
+    color: #2c974b;
+}
+
+/* Card 2: AI Actions */
+.action-buttons-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.ai-action-btn {
     padding: 10px;
-    font-size: 16px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background-color: #f6f8fa;
     cursor: pointer;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    margin-top: 10px;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
     transition: background-color 0.2s;
 }
 
-#createCommentBtn {
-    background-color: var(--primary-color);
+.ai-action-btn:hover:not(:disabled) {
+    background-color: #e8eaed;
 }
 
-#createCommentBtn:hover:not(:disabled) {
-    background-color: var(--primary-hover-color);
-}
-
-#createCommentBtn:disabled {
-    background-color: #a5a5a5;
+.ai-action-btn:disabled {
+    opacity: 0.6;
     cursor: not-allowed;
 }
 
-#viewHistoryBtn {
-    background-color: var(--secondary-color);
+#ai-actions-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 0;
+}
+
+#ai-actions-loading p {
+    margin: 10px 0 0 0;
+    font-size: 13px;
+    color: #586069;
+}
+
+#ai-result-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    font-size: 14px;
+    resize: vertical;
     margin-bottom: 10px;
+    height: 120px;
+    /* Chiều cao mặc định cho bình luận */
 }
 
-#viewHistoryBtn:hover {
-    background-color: var(--secondary-hover-color);
+#ai-result-textarea.summary-mode {
+    height: 200px;
+    /* Chiều cao lớn hơn cho tóm tắt */
 }
 
-.spinner {
-    width: 18px;
-    height: 18px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
-    border-top-color: #fff;
-    animation: spin 1s ease-in-out infinite;
+.result-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
+.result-actions button {
+    flex-grow: 1;
+    padding: 8px;
+    font-size: 13px;
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+    background-color: #f6f8fa;
+    cursor: pointer;
 }
 
+#copyBtn {
+    flex-grow: 2;
+}
+
+#commentNowBtn {
+    background-color: #2c974b;
+    color: white;
+    border-color: #2c974b;
+    flex-grow: 3;
+}
+
+/* Card 3: Quick Settings */
 .setting-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 15px;
-    padding-top: 10px;
-    border-top: 1px solid #eee;
 }
 
 .setting-row label {
     font-size: 14px;
+    font-weight: 500;
 }
 
-/* The switch */
 .switch {
     position: relative;
     display: inline-block;
@@ -190,4 +222,66 @@ input:checked+.slider:before {
 
 .slider.round:before {
     border-radius: 50%;
+}
+
+/* Footer */
+.footer-nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.button {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+    cursor: pointer;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background-color 0.2s;
+    font-weight: 500;
+}
+
+#viewHistoryBtn {
+    background-color: var(--secondary-color);
+}
+
+#viewHistoryBtn:hover {
+    background-color: var(--secondary-hover-color);
+}
+
+.button.secondary {
+    background-color: #6c757d;
+}
+
+.button.secondary:hover {
+    background-color: #5a6268;
+}
+
+/* Utility Classes */
+.hidden {
+    display: none !important;
+}
+
+.spinner {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 4px solid #f3f3f3;
+    border-top-color: var(--primary-color);
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
