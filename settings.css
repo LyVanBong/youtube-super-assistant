@@ -140,24 +140,40 @@ input[type="text"]:focus {
 }
 
 .footer {
-    text-align: center;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
     margin-top: 20px;
 }
 
-#save-btn {
+#save-btn,
+.secondary-button {
     padding: 12px 30px;
     font-size: 16px;
     color: white;
-    background-color: #2c974b;
     border: 1px solid rgba(27, 31, 35, .15);
     border-radius: 6px;
     cursor: pointer;
     font-weight: 600;
+    text-decoration: none;
     transition: background-color 0.2s;
+}
+
+#save-btn {
+    background-color: #2c974b;
 }
 
 #save-btn:hover {
     background-color: #278742;
+}
+
+.secondary-button {
+    background-color: #6c757d;
+}
+
+.secondary-button:hover {
+    background-color: #5a6268;
 }
 
 /* --- CSS CHO THANH TRƯỢT KÉP --- */
@@ -227,7 +243,7 @@ input[type="text"]:focus {
     position: relative;
 }
 
-/* --- CSS CHO TRƯỜNG NHẬP LIỆU CÓ ICON (ĐÃ SỬA LỖI CHIỀU CAO) --- */
+/* --- CSS CHO TRƯỜNG NHẬP LIỆU CÓ ICON --- */
 .input-with-icon {
     position: relative;
     width: 100%;
@@ -237,9 +253,7 @@ input[type="text"]:focus {
 .input-with-icon input {
     width: 100%;
     padding-right: 45px;
-    /* Tăng khoảng trống cho nút */
     margin: 0;
-    /* Đảm bảo chiều cao input nhất quán */
     height: 37px;
 }
 
@@ -249,7 +263,6 @@ input[type="text"]:focus {
     top: 1px;
     bottom: 1px;
     width: 40px;
-    /* Cho nút một chiều rộng cố định */
     background: none;
     border: none;
     cursor: pointer;
