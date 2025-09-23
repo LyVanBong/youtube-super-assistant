@@ -21,10 +21,66 @@ body {
 .container {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 30px;
+    padding: 20px 30px 30px 30px;
 }
 
-h1 {
+/* --- Thanh nhập URL --- */
+.url-header {
+    background-color: #fff;
+    padding: 15px 30px;
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.input-group {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+#youtube-url-input {
+    flex-grow: 1;
+    padding: 10px 15px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    font-size: 14px;
+}
+
+#fetch-video-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#fetch-video-btn:hover {
+    background-color: #d60000;
+}
+
+#fetch-video-btn:disabled {
+    background-color: #fca5a5;
+    cursor: not-allowed;
+}
+
+.error-message {
+    color: #dc3545;
+    margin-top: 8px;
+    font-size: 13px;
+    height: 18px;
+    text-align: center;
+}
+
+/* --- Tiêu đề trang --- */
+#page-title {
     text-align: center;
     color: #24292e;
     margin-top: 0;
@@ -32,10 +88,21 @@ h1 {
     font-size: 28px;
 }
 
+.main-content.inactive+#page-title {
+    display: none;
+    /* Ẩn tiêu đề nếu chưa có nội dung */
+}
+
+
+/* --- Nội dung chính --- */
 .main-content {
     display: flex;
     gap: 30px;
     align-items: flex-start;
+}
+
+.main-content.inactive {
+    display: none;
 }
 
 .card {
@@ -93,8 +160,8 @@ h1 {
     width: 35%;
     flex-shrink: 0;
     position: sticky;
-    top: 30px;
-    height: calc(100vh - 125px);
+    top: 90px;
+    height: calc(100vh - 110px);
 }
 
 .info-panel .card {
@@ -274,19 +341,6 @@ h1 {
     word-break: break-all;
 }
 
-.info-row .value.capitalize {
-    text-transform: capitalize;
-}
-
-.info-row .value.boolean-true {
-    color: #2c974b;
-    font-weight: bold;
-}
-
-.info-row .value.boolean-false {
-    color: #cb2431;
-}
-
 #video-description {
     white-space: pre-wrap;
     font-size: 14px;
@@ -317,7 +371,7 @@ h1 {
     width: 65%;
     display: flex;
     flex-direction: column;
-    max-height: calc(100vh - 125px);
+    max-height: calc(100vh - 110px);
 }
 
 .toolbar {
@@ -414,7 +468,6 @@ h1 {
     position: relative;
     padding: 24px;
     overflow-y: auto;
-    /* ĐÃ THÊM */
 }
 
 .transcript-segment {
@@ -475,7 +528,7 @@ h1 {
     font-size: 16px;
 }
 
-/* --- Popover Sao chép dòng --- */
+/* Popover Sao chép dòng */
 .copy-popover {
     position: absolute;
     bottom: 120%;
@@ -510,7 +563,7 @@ h1 {
     background-color: #f6f8fa;
 }
 
-/* --- TRẠNG THÁI LOADING --- */
+/* Trạng thái Loading */
 .spinner-container {
     display: none;
     padding: 50px 0;
