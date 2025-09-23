@@ -3,6 +3,8 @@
     --primary-hover-color: #cc0000;
     --secondary-color: #007bff;
     --secondary-hover-color: #0056b3;
+    --tertiary-color: #28a745; /* Màu mới */
+    --tertiary-hover-color: #218838; /* Màu mới */
     --background-color: #f9f9f9;
     --card-background-color: #ffffff;
     --text-color: #333;
@@ -82,6 +84,9 @@ button, a.button {
 
 #viewHistoryBtn { background-color: var(--secondary-color); }
 #viewHistoryBtn:hover { background-color: var(--secondary-hover-color); }
+
+#viewTranscriptHistoryBtn { background-color: var(--tertiary-color); }
+#viewTranscriptHistoryBtn:hover { background-color: var(--tertiary-hover-color); }
 
 .spinner {
     width: 18px;

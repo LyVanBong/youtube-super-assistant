@@ -121,14 +121,48 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return response.json();
     }
+    
+    // --- LƯU VÀO LỊCH SỬ TRANSCRIPT ---
+    async function saveToTranscriptHistory(videoData, videoUrl) {
+        if (!videoData || !videoData.id) return;
+
+        const { id, snippet = {} } = videoData;
+        const newEntry = {
+            id: id,
+            videoUrl: videoUrl,
+            title: snippet.title || 'Không có tiêu đề',
+            channelTitle: snippet.channelTitle || 'Không rõ',
+            thumbnailUrl: snippet.thumbnails?.medium?.url || 'icons/icon128.png'
+        };
+
+        const result = await chrome.storage.local.get({ transcriptHistory: [] });
+        let history = result.transcriptHistory;
+
+        // Xóa entry cũ nếu đã tồn tại để đưa lên đầu
+        history = history.filter(item => item.id !== newEntry.id);
+        
+        // Thêm entry mới vào đầu danh sách
+        history.unshift(newEntry);
+
+        // Giới hạn lịch sử ở 50 video gần nhất
+        if (history.length > 50) {
+            history = history.slice(0, 50);
+        }
+
+        await chrome.storage.local.set({ transcriptHistory: history });
+    }
+
 
     // --- Các hàm render ---
-    function renderVideoInfo(data) {
+    function renderVideoInfo(data, videoUrl) {
         const videoData = data?.[0];
         if (!videoData) {
             infoPanel.innerHTML = '<div class="card"><h3>Không thể tải thông tin video.</h3></div>';
             return;
         }
+
+        // Lưu video vào lịch sử
+        saveToTranscriptHistory(videoData, videoUrl);
 
         const { id, snippet = {}, statistics = {}, player = {}, contentDetails = {} } = videoData;
 
@@ -305,6 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const videoUrl = result.transcriptVideoUrl;
 
         if (videoUrl) {
+            // Xóa URL sau khi đã đọc để tránh mở lại cùng video vào lần sau
             chrome.storage.local.remove('transcriptVideoUrl');
         } else {
             container.innerHTML = '<h1>Lỗi: Không tìm thấy URL của video. Vui lòng thử lại.</h1>';
@@ -320,7 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const transcriptPromise = fetchApiData(videoUrl, 'transcripts');
 
         infoPromise
-            .then(renderVideoInfo)
+            .then(data => renderVideoInfo(data, videoUrl)) // Truyền videoUrl vào đây
             .catch(err => {
                 console.error("Lỗi Info API:", err);
                 infoPanel.innerHTML = '<div class="card"><h3>Không thể tải thông tin video.</h3></div>';
