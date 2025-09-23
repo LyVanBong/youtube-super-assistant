@@ -95,7 +95,6 @@ h1 {
     position: sticky;
     top: 30px;
     height: calc(100vh - 125px);
-    /* Điều chỉnh chiều cao */
 }
 
 .info-panel .card {
@@ -414,6 +413,8 @@ h1 {
     flex-grow: 1;
     position: relative;
     padding: 24px;
+    overflow-y: auto;
+    /* ĐÃ THÊM */
 }
 
 .transcript-segment {
