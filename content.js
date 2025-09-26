@@ -212,8 +212,18 @@ function setupVideoProgressListener() {
         console.log(`[Super Assistant] Ngưỡng kích hoạt ngẫu nhiên: ${(activationThreshold * 100).toFixed(2)}%`);
 
         progressCheckInterval = setInterval(() => {
-            const adSkipButton = document.querySelector('.ytp-ad-skip-button-container .ytp-ad-skip-button, .ytp-ad-skip-button.ytp-button');
-            if (adSkipButton) adSkipButton.click();
+            // --- PHẦN SỬA LỖI ---
+            // 1. Kiểm tra nếu có quảng cáo đang hiển thị
+            const isAdShowing = document.querySelector('.ad-showing');
+            if (isAdShowing) {
+                console.log('[Super Assistant] Phát hiện quảng cáo, tạm dừng kiểm tra.');
+                // Cố gắng bỏ qua quảng cáo nếu có thể
+                const adSkipButton = document.querySelector('.ytp-ad-skip-button-container .ytp-ad-skip-button, .ytp-ad-skip-button.ytp-button');
+                if (adSkipButton) adSkipButton.click();
+                // Dừng thực thi và chờ lần kiểm tra tiếp theo
+                return;
+            }
+            // --- KẾT THÚC PHẦN SỬA LỖI ---
 
             if (video.duration && !automationHasRun && (video.currentTime / video.duration) >= activationThreshold) {
                 automationHasRun = true;
@@ -230,7 +240,7 @@ function setupVideoProgressListener() {
                         }
                     }).catch(err => runFullAutomation(currentVideoId, null)); // Nếu lỗi, cứ chạy
             }
-        }, 3000);
+        }, 3000); // Tần suất kiểm tra vẫn là 3 giây
     });
 }
 // --- CÁC HÀM CHÈN GIAO DIỆN (UI INJECTION) ---
