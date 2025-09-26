@@ -78,7 +78,6 @@ function setButtonLoadingState(button, isLoading) {
     }
 }
 
-// **HÀM MỚI**: Hiển thị thông báo tùy chỉnh
 function showCustomNotification(message, isError = false) {
     const notificationId = 'super-assistant-notification';
     let notification = document.getElementById(notificationId);
@@ -106,9 +105,8 @@ function injectStyles() {
             border: 3px solid rgba(255, 255, 255, 0.3); border-top-color: #FFF;
             animation: super-assistant-spin 1s linear infinite; margin: auto;
         }
-        /* --- SỬA LỖI VỊ TRÍ --- */
         #super-assistant-fab-container {
-            position: fixed; bottom: 20px; right: 20px; z-index: 9999; /* Đã thay đổi vị trí */
+            position: fixed; bottom: 20px; right: 20px; z-index: 9999;
             display: flex; flex-direction: column-reverse; align-items: center;
         }
         #super-assistant-main-btn {
@@ -120,35 +118,35 @@ function injectStyles() {
         #super-assistant-main-btn img {
             width: 32px; height: 32px; transition: transform 0.3s ease-in-out;
         }
-        #super-assistant-main-btn:hover img {
-             transform: rotate(360deg);
-        }
-        /* --- SỬA LỖI LOGIC DI CHUỘT --- */
+
+        /* --- GIẢI PHÁP JS + CSS --- */
         #super-assistant-actions-menu {
             display: flex; flex-direction: column; align-items: center; gap: 10px;
             visibility: hidden; opacity: 0; transform: translateY(10px);
-            transition: all 0.2s ease-in-out;
-            pointer-events: none; /* Vô hiệu hóa tương tác khi ẩn */
+            transition: visibility 0.2s, opacity 0.2s, transform 0.2s ease-in-out;
+            pointer-events: none;
         }
-        /* Kích hoạt menu khi di chuột vào nút chính HOẶC vào chính menu */
-        #super-assistant-main-btn:hover + #super-assistant-actions-menu,
-        #super-assistant-actions-menu:hover {
+        /* KHI CONTAINER CÓ CLASS 'menu-active', THÌ HIỆN MENU */
+        #super-assistant-fab-container.menu-active #super-assistant-actions-menu {
             visibility: visible;
             opacity: 1;
             transform: translateY(0);
-            pointer-events: auto; /* Kích hoạt lại tương tác khi hiện */
+            pointer-events: auto;
         }
-        /* --- KẾT THÚC SỬA LỖI --- */
+        /* VÀ XOAY ICON */
+        #super-assistant-fab-container.menu-active #super-assistant-main-btn img {
+            transform: rotate(360deg);
+        }
+        /* --- KẾT THÚC GIẢI PHÁP --- */
+
         .super-assistant-action-btn {
             background-color: rgba(15, 15, 15, 0.9); color: white; border: 1px solid #3f3f3f;
             border-radius: 50%; width: 50px; height: 50px; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); transition: all 0.2s ease;
         }
-        .super-assistant-action-btn .super-assistant-loading-spinner { width: 24px; height: 24px; }
         .super-assistant-action-btn:hover:not(:disabled) { transform: scale(1.1); }
-        
-        /* CSS cho Thông báo tùy chỉnh */
+
         #super-assistant-notification {
             position: fixed; top: 20px; right: 20px; z-index: 10000;
             background-color: #28a745; color: white; padding: 12px 20px;
@@ -176,7 +174,7 @@ async function runFullAutomation(expectedVideoId, commentContent = null) {
         console.log('[Super Assistant] Bắt đầu chuỗi tự động cho video:', expectedVideoId);
         checkContext();
         const commentBox = await scrollToElement('ytd-comments#comments');
-        await humanizedDelay(500); // Ngắn hơn vì scroll đã xong
+        await humanizedDelay(500);
         checkContext();
 
         const placeholder = commentBox.querySelector('ytd-comment-simplebox-renderer #placeholder-area');
@@ -222,18 +220,13 @@ function setupVideoProgressListener() {
         console.log(`[Super Assistant] Ngưỡng kích hoạt ngẫu nhiên: ${(activationThreshold * 100).toFixed(2)}%`);
 
         progressCheckInterval = setInterval(() => {
-            // --- PHẦN SỬA LỖI ---
-            // 1. Kiểm tra nếu có quảng cáo đang hiển thị
             const isAdShowing = document.querySelector('.ad-showing');
             if (isAdShowing) {
                 console.log('[Super Assistant] Phát hiện quảng cáo, tạm dừng kiểm tra.');
-                // Cố gắng bỏ qua quảng cáo nếu có thể
                 const adSkipButton = document.querySelector('.ytp-ad-skip-button-container .ytp-ad-skip-button, .ytp-ad-skip-button.ytp-button');
                 if (adSkipButton) adSkipButton.click();
-                // Dừng thực thi và chờ lần kiểm tra tiếp theo
                 return;
             }
-            // --- KẾT THÚC PHẦN SỬA LỖI ---
 
             if (video.duration && !automationHasRun && (video.currentTime / video.duration) >= activationThreshold) {
                 automationHasRun = true;
@@ -242,15 +235,14 @@ function setupVideoProgressListener() {
                     .then(response => {
                         if (!response.isInHistory) {
                             runFullAutomation(currentVideoId, null).then(() => {
-                                // Sau khi tự động chạy xong, cuộn lại lên đầu nếu cần
                                 setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 2000);
                             });
                         } else {
                             console.log('[Super Assistant] Video đã có trong lịch sử, bỏ qua tự động.');
                         }
-                    }).catch(err => runFullAutomation(currentVideoId, null)); // Nếu lỗi, cứ chạy
+                    }).catch(err => runFullAutomation(currentVideoId, null));
             }
-        }, 3000); // Tần suất kiểm tra vẫn là 3 giây
+        }, 3000);
     });
 }
 // --- CÁC HÀM CHÈN GIAO DIỆN (UI INJECTION) ---
@@ -315,13 +307,18 @@ function createOrUpdateFloatingButtons() {
             }, 'super-assistant-auto-toggle-btn');
 
             actionsMenu.append(scrollToTopBtn, scrollToCommentBtn, getTranscriptBtn, summarizeBtn, autoToggleButton);
-
-            // --- SỬA LỖI THỨ TỰ HTML ---
-            // Đưa nút chính vào trước menu để logic CSS sibling selector (dấu +) hoạt động
-            container.append(mainButton, actionsMenu);
-            // --- KẾT THÚC SỬA LỖI ---
-
+            
+            container.append(actionsMenu, mainButton);
             document.body.appendChild(container);
+
+            // --- PHẦN LOGIC JAVASCRIPT ĐIỀU KHIỂN HIỂN THỊ ---
+            mainButton.addEventListener('mouseenter', () => {
+                container.classList.add('menu-active');
+            });
+            container.addEventListener('mouseleave', () => {
+                container.classList.remove('menu-active');
+            });
+            // --- KẾT THÚC LOGIC JAVASCRIPT ---
         }
         container.style.display = 'flex';
         updateAutoToggleButtonUI();
@@ -329,7 +326,7 @@ function createOrUpdateFloatingButtons() {
         if (container) container.style.display = 'none';
     }
 }
-//... (Các hàm updateAutoToggleButtonUI, injectAICommentButton, injectAIReplyButtons giữ nguyên)
+
 function updateAutoToggleButtonUI() {
     const btn = document.getElementById('super-assistant-auto-toggle-btn');
     if (!btn) return;
