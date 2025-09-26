@@ -106,8 +106,9 @@ function injectStyles() {
             border: 3px solid rgba(255, 255, 255, 0.3); border-top-color: #FFF;
             animation: super-assistant-spin 1s linear infinite; margin: auto;
         }
+        /* --- SỬA LỖI VỊ TRÍ --- */
         #super-assistant-fab-container {
-            position: fixed; bottom: 30px; right: 30px; z-index: 9999;
+            position: fixed; bottom: 20px; right: 20px; z-index: 9999; /* Đã thay đổi vị trí */
             display: flex; flex-direction: column-reverse; align-items: center;
         }
         #super-assistant-main-btn {
@@ -119,15 +120,25 @@ function injectStyles() {
         #super-assistant-main-btn img {
             width: 32px; height: 32px; transition: transform 0.3s ease-in-out;
         }
-        #super-assistant-fab-container:hover #super-assistant-main-btn img { transform: rotate(360deg); }
+        #super-assistant-main-btn:hover img {
+             transform: rotate(360deg);
+        }
+        /* --- SỬA LỖI LOGIC DI CHUỘT --- */
         #super-assistant-actions-menu {
             display: flex; flex-direction: column; align-items: center; gap: 10px;
             visibility: hidden; opacity: 0; transform: translateY(10px);
             transition: all 0.2s ease-in-out;
+            pointer-events: none; /* Vô hiệu hóa tương tác khi ẩn */
         }
-        #super-assistant-fab-container:hover #super-assistant-actions-menu {
-            visibility: visible; opacity: 1; transform: translateY(0);
+        /* Kích hoạt menu khi di chuột vào nút chính HOẶC vào chính menu */
+        #super-assistant-main-btn:hover + #super-assistant-actions-menu,
+        #super-assistant-actions-menu:hover {
+            visibility: visible;
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto; /* Kích hoạt lại tương tác khi hiện */
         }
+        /* --- KẾT THÚC SỬA LỖI --- */
         .super-assistant-action-btn {
             background-color: rgba(15, 15, 15, 0.9); color: white; border: 1px solid #3f3f3f;
             border-radius: 50%; width: 50px; height: 50px; cursor: pointer;
@@ -152,7 +163,6 @@ function injectStyles() {
     document.head.appendChild(style);
 }
 
-// ... (Các hàm logic khác giữ nguyên)
 // --- CÁC HÀM LOGIC CHÍNH ---
 function handleGetTranscriptClick() {
     chrome.runtime.sendMessage({
@@ -285,7 +295,6 @@ function createOrUpdateFloatingButtons() {
             });
             const getTranscriptBtn = createButton(SVG_ICONS.transcript, 'Xem Lời thoại', handleGetTranscriptClick);
 
-            // **NÚT TÓM TẮT MỚI**
             const summarizeBtn = createButton(SVG_ICONS.summarize, 'Tóm tắt video (AI)', async (btn) => {
                 setButtonLoadingState(btn, true);
                 try {
@@ -305,9 +314,13 @@ function createOrUpdateFloatingButtons() {
                 });
             }, 'super-assistant-auto-toggle-btn');
 
-            // **THÊM NÚT TÓM TẮT VÀO MENU**
             actionsMenu.append(scrollToTopBtn, scrollToCommentBtn, getTranscriptBtn, summarizeBtn, autoToggleButton);
-            container.append(actionsMenu, mainButton);
+
+            // --- SỬA LỖI THỨ TỰ HTML ---
+            // Đưa nút chính vào trước menu để logic CSS sibling selector (dấu +) hoạt động
+            container.append(mainButton, actionsMenu);
+            // --- KẾT THÚC SỬA LỖI ---
+
             document.body.appendChild(container);
         }
         container.style.display = 'flex';
