@@ -7,12 +7,15 @@ chrome.runtime.onInstalled.addListener((details) => {
             isAutoCommentEnabled: false,
             autoPercentageMin: 30,
             autoPercentageMax: 80,
+            isAutoLikeEnabled: true,
+            autoLikePercentageMin: 50,
+            autoLikePercentageMax: 80,
             aiLanguage: 'English',
             customPrompt: '',
             aiApiKey: '',
             accessToken: '23105d20-3812-44c9-9906-8adf1fd5e69e'
         });
-        chrome.storage.local.set({ commentHistory: [], transcriptHistory: [], summaryHistory: [] });
+        chrome.storage.local.set({ commentHistory: [], transcriptHistory: [], summaryHistory: [], likeHistory: [] });
 
         // 2. Mở trang hướng dẫn sử dụng trong một tab mới
         const guideUrl = "https://blogs.softty.net/tien-ich-ai-tang-tuong-tac-youtube/";
@@ -41,6 +44,18 @@ function saveSummaryToHistory(data) {
             history.pop();
         }
         chrome.storage.local.set({ summaryHistory: history });
+    });
+}
+
+// Hàm lưu trữ lịch sử like
+function saveLikeToHistory(data) {
+    chrome.storage.local.get({ likeHistory: [] }, (result) => {
+        const history = result.likeHistory;
+        history.unshift(data);
+        if (history.length > 100) {
+            history.pop();
+        }
+        chrome.storage.local.set({ likeHistory: history });
     });
 }
 
@@ -165,6 +180,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     }
                 });
                 sendResponse({ success: true, isInHistory: hasValidComment });
+            } else if (request.action === 'isVideoLiked') {
+                const { likeHistory } = await chrome.storage.local.get({ likeHistory: [] });
+                const isLiked = likeHistory.some(item => {
+                    try {
+                        return new URL(item.videoUrl).searchParams.get('v') === request.videoId;
+                    } catch {
+                        return false;
+                    }
+                });
+                sendResponse({ success: true, isLiked: isLiked });
+            }
+             else if (request.action === 'likeVideo') {
+                saveLikeToHistory({
+                    videoUrl: request.url,
+                    realTimestamp: new Date().toISOString()
+                });
+                sendResponse({ success: true });
             }
         } catch (error) {
             sendResponse({ success: false, error: error.message });
