@@ -206,6 +206,28 @@ async function runFullAutomation(expectedVideoId, commentContent = null) {
         console.warn('[Super Assistant] Lỗi trong chuỗi tự động:', error.message);
     }
 }
+function findAndClickLikeButton() {
+    let attempts = 0;
+    const maxAttempts = 10;
+    const interval = setInterval(() => {
+        const likeButton = document.querySelector('like-button-view-model button');
+        if (likeButton && likeButton.getAttribute('aria-pressed') === 'false') {
+            likeButton.click();
+            sendMessagePromise({ action: 'likeVideo', url: window.location.href });
+            console.log('[Super Assistant] Đã tự động thích video!');
+            clearInterval(interval);
+        } else if (likeButton && likeButton.getAttribute('aria-pressed') === 'true') {
+            console.log('[Super Assistant] Video đã được thích trước đó, bỏ qua.');
+            clearInterval(interval);
+        }
+        
+        attempts++;
+        if (attempts >= maxAttempts) {
+            console.log('[Super Assistant] Không tìm thấy nút "Thích" sau nhiều lần thử.');
+            clearInterval(interval);
+        }
+    }, 1000);
+}
 
 function setupVideoProgressListener() {
     if (progressCheckInterval) clearInterval(progressCheckInterval);
@@ -248,12 +270,7 @@ function setupVideoProgressListener() {
                 sendMessagePromise({ action: 'isVideoLiked', videoId: currentVideoId })
                     .then(response => {
                         if (!response.isLiked) {
-                            const likeButton = document.querySelector('#menu-container #top-level-buttons-computed > ytd-toggle-button-renderer:first-child button');
-                            if (likeButton && likeButton.getAttribute('aria-pressed') === 'false') {
-                                likeButton.click();
-                                sendMessagePromise({ action: 'likeVideo', url: window.location.href });
-                                console.log('[Super Assistant] Đã tự động thích video!');
-                            }
+                            findAndClickLikeButton();
                         } else {
                             console.log('[Super Assistant] Video đã được thích trước đó, bỏ qua.');
                         }
