@@ -17,6 +17,30 @@
             </div>
             <div class="setting-item">
                 <div>
+                    <label for="auto-like-toggle">Bật tự động thích video</label>
+                    <div class="description">Khi bật, tiện ích sẽ tự động thích video khi xem.</div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="auto-like-toggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <div>
+                    <label>Ngưỡng kích hoạt tự động thích</label>
+                    <div class="description">Tiện ích sẽ kích hoạt ngẫu nhiên trong khoảng thời gian này.</div>
+                </div>
+                <div class="range-slider-container">
+                    <div class="range-values" id="like-range-values-label">50% - 80%</div>
+                    <div class="range-slider">
+                        <input type="range" id="like-range-min" min="10" max="100" step="5" value="50">
+                        <input type="range" id="like-range-max" min="10" max="100" step="5" value="80">
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <div class="setting-item">
+                <div>
                     <label for="auto-toggle">Bật tự động bình luận</label>
                     <div class="description">Khi bật, tiện ích sẽ tự động bình luận khi xem gần hết video.</div>
                 </div>
@@ -27,7 +51,7 @@
             </div>
             <div class="setting-item">
                 <div>
-                    <label>Ngưỡng kích hoạt tự động</label>
+                    <label>Ngưỡng kích hoạt tự động bình luận</label>
                     <div class="description">Tiện ích sẽ kích hoạt ngẫu nhiên trong khoảng thời gian này.</div>
                 </div>
                 <div class="range-slider-container">

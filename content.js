@@ -10,6 +10,7 @@ console.log('[Super Assistant] Content script đã được tải và sẵn sàn
 // --- BIẾN TOÀN CỤC ---
 let observer;
 let automationHasRun = false;
+let autoLikeHasRun = false;
 let progressCheckInterval;
 let currentVideoId = null;
 
@@ -78,7 +79,6 @@ function setButtonLoadingState(button, isLoading) {
     }
 }
 
-// **HÀM MỚI**: Hiển thị thông báo tùy chỉnh
 function showCustomNotification(message, isError = false) {
     const notificationId = 'super-assistant-notification';
     let notification = document.getElementById(notificationId);
@@ -107,7 +107,7 @@ function injectStyles() {
             animation: super-assistant-spin 1s linear infinite; margin: auto;
         }
         #super-assistant-fab-container {
-            position: fixed; bottom: 30px; right: 30px; z-index: 9999;
+            position: fixed; bottom: 20px; right: 20px; z-index: 9999;
             display: flex; flex-direction: column-reverse; align-items: center;
         }
         #super-assistant-main-btn {
@@ -119,25 +119,35 @@ function injectStyles() {
         #super-assistant-main-btn img {
             width: 32px; height: 32px; transition: transform 0.3s ease-in-out;
         }
-        #super-assistant-fab-container:hover #super-assistant-main-btn img { transform: rotate(360deg); }
+
+        /* --- GIẢI PHÁP JS + CSS --- */
         #super-assistant-actions-menu {
             display: flex; flex-direction: column; align-items: center; gap: 10px;
             visibility: hidden; opacity: 0; transform: translateY(10px);
-            transition: all 0.2s ease-in-out;
+            transition: visibility 0.2s, opacity 0.2s, transform 0.2s ease-in-out;
+            pointer-events: none;
         }
-        #super-assistant-fab-container:hover #super-assistant-actions-menu {
-            visibility: visible; opacity: 1; transform: translateY(0);
+        /* KHI CONTAINER CÓ CLASS 'menu-active', THÌ HIỆN MENU */
+        #super-assistant-fab-container.menu-active #super-assistant-actions-menu {
+            visibility: visible;
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
         }
+        /* VÀ XOAY ICON */
+        #super-assistant-fab-container.menu-active #super-assistant-main-btn img {
+            transform: rotate(360deg);
+        }
+        /* --- KẾT THÚC GIẢI PHÁP --- */
+
         .super-assistant-action-btn {
             background-color: rgba(15, 15, 15, 0.9); color: white; border: 1px solid #3f3f3f;
             border-radius: 50%; width: 50px; height: 50px; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); transition: all 0.2s ease;
         }
-        .super-assistant-action-btn .super-assistant-loading-spinner { width: 24px; height: 24px; }
         .super-assistant-action-btn:hover:not(:disabled) { transform: scale(1.1); }
-        
-        /* CSS cho Thông báo tùy chỉnh */
+
         #super-assistant-notification {
             position: fixed; top: 20px; right: 20px; z-index: 10000;
             background-color: #28a745; color: white; padding: 12px 20px;
@@ -152,7 +162,6 @@ function injectStyles() {
     document.head.appendChild(style);
 }
 
-// ... (Các hàm logic khác giữ nguyên)
 // --- CÁC HÀM LOGIC CHÍNH ---
 function handleGetTranscriptClick() {
     chrome.runtime.sendMessage({
@@ -166,7 +175,7 @@ async function runFullAutomation(expectedVideoId, commentContent = null) {
         console.log('[Super Assistant] Bắt đầu chuỗi tự động cho video:', expectedVideoId);
         checkContext();
         const commentBox = await scrollToElement('ytd-comments#comments');
-        await humanizedDelay(500); // Ngắn hơn vì scroll đã xong
+        await humanizedDelay(500);
         checkContext();
 
         const placeholder = commentBox.querySelector('ytd-comment-simplebox-renderer #placeholder-area');
@@ -197,38 +206,90 @@ async function runFullAutomation(expectedVideoId, commentContent = null) {
         console.warn('[Super Assistant] Lỗi trong chuỗi tự động:', error.message);
     }
 }
+function findAndClickLikeButton() {
+    let attempts = 0;
+    const maxAttempts = 10;
+    const interval = setInterval(() => {
+        const likeButton = document.querySelector('like-button-view-model button');
+        if (likeButton && likeButton.getAttribute('aria-pressed') === 'false') {
+            likeButton.click();
+            sendMessagePromise({ action: 'likeVideo', url: window.location.href });
+            console.log('[Super Assistant] Đã tự động thích video!');
+            clearInterval(interval);
+        } else if (likeButton && likeButton.getAttribute('aria-pressed') === 'true') {
+            console.log('[Super Assistant] Video đã được thích trước đó, bỏ qua.');
+            clearInterval(interval);
+        }
+        
+        attempts++;
+        if (attempts >= maxAttempts) {
+            console.log('[Super Assistant] Không tìm thấy nút "Thích" sau nhiều lần thử.');
+            clearInterval(interval);
+        }
+    }, 1000);
+}
 
 function setupVideoProgressListener() {
     if (progressCheckInterval) clearInterval(progressCheckInterval);
     const video = document.querySelector('video.html5-main-video');
     if (!video) return;
 
-    chrome.storage.sync.get({ isAutoCommentEnabled: true, autoPercentageMin: 30, autoPercentageMax: 80 }, (settings) => {
-        if (!settings.isAutoCommentEnabled) return;
+    chrome.storage.sync.get({ 
+        isAutoCommentEnabled: true, 
+        autoPercentageMin: 30, 
+        autoPercentageMax: 80,
+        isAutoLikeEnabled: true,
+        autoLikePercentageMin: 50,
+        autoLikePercentageMax: 80,
+
+    }, (settings) => {
+        if (!settings.isAutoCommentEnabled && !settings.isAutoLikeEnabled) return;
 
         const min = settings.autoPercentageMin / 100;
         const max = settings.autoPercentageMax / 100;
         const activationThreshold = Math.random() * (max - min) + min;
+
+        const likeMin = settings.autoLikePercentageMin / 100;
+        const likeMax = settings.autoLikePercentageMax / 100;
+        const likeActivationThreshold = Math.random() * (likeMax - likeMin) + likeMin;
+        
         console.log(`[Super Assistant] Ngưỡng kích hoạt ngẫu nhiên: ${(activationThreshold * 100).toFixed(2)}%`);
+        console.log(`[Super Assistant] Ngưỡng kích hoạt tự động thích: ${(likeActivationThreshold * 100).toFixed(2)}%`);
 
         progressCheckInterval = setInterval(() => {
-            const adSkipButton = document.querySelector('.ytp-ad-skip-button-container .ytp-ad-skip-button, .ytp-ad-skip-button.ytp-button');
-            if (adSkipButton) adSkipButton.click();
+            const isAdShowing = document.querySelector('.ad-showing');
+            if (isAdShowing) {
+                console.log('[Super Assistant] Phát hiện quảng cáo, tạm dừng kiểm tra.');
+                const adSkipButton = document.querySelector('.ytp-ad-skip-button-container .ytp-ad-skip-button, .ytp-ad-skip-button.ytp-button');
+                if (adSkipButton) adSkipButton.click();
+                return;
+            }
 
-            if (video.duration && !automationHasRun && (video.currentTime / video.duration) >= activationThreshold) {
+            if (settings.isAutoLikeEnabled && video.duration && !autoLikeHasRun && (video.currentTime / video.duration) >= likeActivationThreshold) {
+                autoLikeHasRun = true;
+                sendMessagePromise({ action: 'isVideoLiked', videoId: currentVideoId })
+                    .then(response => {
+                        if (!response.isLiked) {
+                            findAndClickLikeButton();
+                        } else {
+                            console.log('[Super Assistant] Video đã được thích trước đó, bỏ qua.');
+                        }
+                    });
+            }
+
+            if (settings.isAutoCommentEnabled && video.duration && !automationHasRun && (video.currentTime / video.duration) >= activationThreshold) {
                 automationHasRun = true;
                 clearInterval(progressCheckInterval);
                 sendMessagePromise({ action: 'isVideoInHistory', videoId: currentVideoId })
                     .then(response => {
                         if (!response.isInHistory) {
                             runFullAutomation(currentVideoId, null).then(() => {
-                                // Sau khi tự động chạy xong, cuộn lại lên đầu nếu cần
                                 setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 2000);
                             });
                         } else {
                             console.log('[Super Assistant] Video đã có trong lịch sử, bỏ qua tự động.');
                         }
-                    }).catch(err => runFullAutomation(currentVideoId, null)); // Nếu lỗi, cứ chạy
+                    }).catch(err => runFullAutomation(currentVideoId, null));
             }
         }, 3000);
     });
@@ -275,7 +336,6 @@ function createOrUpdateFloatingButtons() {
             });
             const getTranscriptBtn = createButton(SVG_ICONS.transcript, 'Xem Lời thoại', handleGetTranscriptClick);
 
-            // **NÚT TÓM TẮT MỚI**
             const summarizeBtn = createButton(SVG_ICONS.summarize, 'Tóm tắt video (AI)', async (btn) => {
                 setButtonLoadingState(btn, true);
                 try {
@@ -295,10 +355,19 @@ function createOrUpdateFloatingButtons() {
                 });
             }, 'super-assistant-auto-toggle-btn');
 
-            // **THÊM NÚT TÓM TẮT VÀO MENU**
             actionsMenu.append(scrollToTopBtn, scrollToCommentBtn, getTranscriptBtn, summarizeBtn, autoToggleButton);
+            
             container.append(actionsMenu, mainButton);
             document.body.appendChild(container);
+
+            // --- PHẦN LOGIC JAVASCRIPT ĐIỀU KHIỂN HIỂN THỊ ---
+            mainButton.addEventListener('mouseenter', () => {
+                container.classList.add('menu-active');
+            });
+            container.addEventListener('mouseleave', () => {
+                container.classList.remove('menu-active');
+            });
+            // --- KẾT THÚC LOGIC JAVASCRIPT ---
         }
         container.style.display = 'flex';
         updateAutoToggleButtonUI();
@@ -306,7 +375,7 @@ function createOrUpdateFloatingButtons() {
         if (container) container.style.display = 'none';
     }
 }
-//... (Các hàm updateAutoToggleButtonUI, injectAICommentButton, injectAIReplyButtons giữ nguyên)
+
 function updateAutoToggleButtonUI() {
     const btn = document.getElementById('super-assistant-auto-toggle-btn');
     if (!btn) return;
@@ -381,6 +450,7 @@ function initialize() {
     if (progressCheckInterval) clearInterval(progressCheckInterval);
 
     automationHasRun = false;
+    autoLikeHasRun = false;
     currentVideoId = getVideoIdFromUrl(window.location.href);
 
     createOrUpdateFloatingButtons();

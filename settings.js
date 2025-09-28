@@ -12,10 +12,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const toggleApiKeyBtn = document.getElementById('toggle-api-key');
     const toggleAccessTokenBtn = document.getElementById('toggle-access-token');
 
+    // Cài đặt cho auto like
+    const autoLikeToggle = document.getElementById('auto-like-toggle');
+    const likeRangeMin = document.getElementById('like-range-min');
+    const likeRangeMax = document.getElementById('like-range-max');
+    const likeValuesLabel = document.getElementById('like-range-values-label');
+
+
     // --- Thiết lập thanh trượt kép ---
     const sliderTrack = document.createElement('div');
     sliderTrack.className = 'slider-track';
     rangeMin.parentElement.appendChild(sliderTrack);
+
+    const likeSliderTrack = document.createElement('div');
+    likeSliderTrack.className = 'slider-track';
+    likeRangeMin.parentElement.appendChild(likeSliderTrack);
 
     // --- Tải danh sách ngôn ngữ từ API ---
     async function populateLanguages() {
@@ -63,6 +74,22 @@ document.addEventListener('DOMContentLoaded', () => {
     rangeMin.addEventListener('input', updateSliderAppearance);
     rangeMax.addEventListener('input', updateSliderAppearance);
 
+    function updateLikeSliderAppearance() {
+        let minVal = parseInt(likeRangeMin.value);
+        let maxVal = parseInt(likeRangeMax.value);
+        if (minVal > maxVal - 5) {
+            if (this && this.id === 'like-range-min') { likeRangeMin.value = maxVal - 5; }
+            else { likeRangeMax.value = minVal + 5; }
+        }
+        likeValuesLabel.textContent = `${likeRangeMin.value}% - ${likeRangeMax.value}%`;
+        const minPercent = ((likeRangeMin.value - likeRangeMin.min) / (likeRangeMin.max - likeRangeMin.min)) * 100;
+        const maxPercent = ((likeRangeMax.value - likeRangeMax.min) / (likeRangeMax.max - likeRangeMax.min)) * 100;
+        likeSliderTrack.style.left = `${minPercent}%`;
+        likeSliderTrack.style.width = `${maxPercent - minPercent}%`;
+    }
+    likeRangeMin.addEventListener('input', updateLikeSliderAppearance);
+    likeRangeMax.addEventListener('input', updateLikeSliderAppearance);
+
     // --- Xử lý nút xem/ẩn mật khẩu ---
     function setupToggleVisibility(button, input) {
         button.addEventListener('click', () => {
@@ -84,6 +111,9 @@ document.addEventListener('DOMContentLoaded', () => {
             isAutoCommentEnabled: true,
             autoPercentageMin: 30,
             autoPercentageMax: 80,
+            isAutoLikeEnabled: true,
+            autoLikePercentageMin: 50,
+            autoLikePercentageMax: 80,
             aiLanguage: 'English',
             customPrompt: '',
             aiApiKey: '',
@@ -94,6 +124,9 @@ document.addEventListener('DOMContentLoaded', () => {
             customPrompt.value = data.customPrompt;
             rangeMin.value = data.autoPercentageMin;
             rangeMax.value = data.autoPercentageMax;
+            autoLikeToggle.checked = data.isAutoLikeEnabled;
+            likeRangeMin.value = data.autoLikePercentageMin;
+            likeRangeMax.value = data.autoLikePercentageMax;
             aiApiKeyInput.value = data.aiApiKey;
             accessTokenInput.value = data.accessToken;
             if (aiLanguageSelect.querySelector(`option[value="${data.aiLanguage}"]`)) {
@@ -102,6 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 aiLanguageSelect.value = 'English';
             }
             updateSliderAppearance();
+            updateLikeSliderAppearance();
         });
     }
 
@@ -110,6 +144,9 @@ document.addEventListener('DOMContentLoaded', () => {
             isAutoCommentEnabled: autoToggle.checked,
             autoPercentageMin: parseInt(rangeMin.value, 10),
             autoPercentageMax: parseInt(rangeMax.value, 10),
+            isAutoLikeEnabled: autoLikeToggle.checked,
+            autoLikePercentageMin: parseInt(likeRangeMin.value, 10),
+            autoLikePercentageMax: parseInt(likeRangeMax.value, 10),
             aiLanguage: aiLanguageSelect.value,
             customPrompt: customPrompt.value,
             aiApiKey: aiApiKeyInput.value.trim(),
