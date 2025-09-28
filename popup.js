@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const backBtn = document.getElementById('backBtn');
 
     const autoToggle = document.getElementById('auto-toggle');
+    const autoLikeToggle = document.getElementById('auto-like-toggle');
     const settingsBtn = document.getElementById('settingsBtn');
     const languageSelect = document.getElementById('ai-language-select');
     const versionInfoEl = document.getElementById('version-info');
@@ -150,6 +151,10 @@ document.addEventListener('DOMContentLoaded', function () {
         chrome.storage.sync.set({ isAutoCommentEnabled: autoToggle.checked });
     });
 
+     autoLikeToggle.addEventListener('change', () => {
+        chrome.storage.sync.set({ isAutoLikeEnabled: autoLikeToggle.checked });
+    });
+
     languageSelect.addEventListener('change', () => {
         chrome.storage.sync.set({ aiLanguage: languageSelect.value });
     });
@@ -190,8 +195,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
         await populateLanguages();
 
-        chrome.storage.sync.get({ isAutoCommentEnabled: true, aiLanguage: 'English' }, (data) => {
+        chrome.storage.sync.get({ isAutoCommentEnabled: true, isAutoLikeEnabled: true, aiLanguage: 'English' }, (data) => {
             autoToggle.checked = data.isAutoCommentEnabled;
+            autoLikeToggle.checked = data.isAutoLikeEnabled;
             if ([...languageSelect.options].some(o => o.value === data.aiLanguage)) {
                 languageSelect.value = data.aiLanguage;
             } else {

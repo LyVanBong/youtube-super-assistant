@@ -10,6 +10,7 @@ console.log('[Super Assistant] Content script đã được tải và sẵn sàn
 // --- BIẾN TOÀN CỤC ---
 let observer;
 let automationHasRun = false;
+let autoLikeHasRun = false;
 let progressCheckInterval;
 let currentVideoId = null;
 
@@ -205,19 +206,55 @@ async function runFullAutomation(expectedVideoId, commentContent = null) {
         console.warn('[Super Assistant] Lỗi trong chuỗi tự động:', error.message);
     }
 }
+function findAndClickLikeButton() {
+    let attempts = 0;
+    const maxAttempts = 10;
+    const interval = setInterval(() => {
+        const likeButton = document.querySelector('like-button-view-model button');
+        if (likeButton && likeButton.getAttribute('aria-pressed') === 'false') {
+            likeButton.click();
+            sendMessagePromise({ action: 'likeVideo', url: window.location.href });
+            console.log('[Super Assistant] Đã tự động thích video!');
+            clearInterval(interval);
+        } else if (likeButton && likeButton.getAttribute('aria-pressed') === 'true') {
+            console.log('[Super Assistant] Video đã được thích trước đó, bỏ qua.');
+            clearInterval(interval);
+        }
+        
+        attempts++;
+        if (attempts >= maxAttempts) {
+            console.log('[Super Assistant] Không tìm thấy nút "Thích" sau nhiều lần thử.');
+            clearInterval(interval);
+        }
+    }, 1000);
+}
 
 function setupVideoProgressListener() {
     if (progressCheckInterval) clearInterval(progressCheckInterval);
     const video = document.querySelector('video.html5-main-video');
     if (!video) return;
 
-    chrome.storage.sync.get({ isAutoCommentEnabled: true, autoPercentageMin: 30, autoPercentageMax: 80 }, (settings) => {
-        if (!settings.isAutoCommentEnabled) return;
+    chrome.storage.sync.get({ 
+        isAutoCommentEnabled: true, 
+        autoPercentageMin: 30, 
+        autoPercentageMax: 80,
+        isAutoLikeEnabled: true,
+        autoLikePercentageMin: 50,
+        autoLikePercentageMax: 80,
+
+    }, (settings) => {
+        if (!settings.isAutoCommentEnabled && !settings.isAutoLikeEnabled) return;
 
         const min = settings.autoPercentageMin / 100;
         const max = settings.autoPercentageMax / 100;
         const activationThreshold = Math.random() * (max - min) + min;
+
+        const likeMin = settings.autoLikePercentageMin / 100;
+        const likeMax = settings.autoLikePercentageMax / 100;
+        const likeActivationThreshold = Math.random() * (likeMax - likeMin) + likeMin;
+        
         console.log(`[Super Assistant] Ngưỡng kích hoạt ngẫu nhiên: ${(activationThreshold * 100).toFixed(2)}%`);
+        console.log(`[Super Assistant] Ngưỡng kích hoạt tự động thích: ${(likeActivationThreshold * 100).toFixed(2)}%`);
 
         progressCheckInterval = setInterval(() => {
             const isAdShowing = document.querySelector('.ad-showing');
@@ -228,7 +265,19 @@ function setupVideoProgressListener() {
                 return;
             }
 
-            if (video.duration && !automationHasRun && (video.currentTime / video.duration) >= activationThreshold) {
+            if (settings.isAutoLikeEnabled && video.duration && !autoLikeHasRun && (video.currentTime / video.duration) >= likeActivationThreshold) {
+                autoLikeHasRun = true;
+                sendMessagePromise({ action: 'isVideoLiked', videoId: currentVideoId })
+                    .then(response => {
+                        if (!response.isLiked) {
+                            findAndClickLikeButton();
+                        } else {
+                            console.log('[Super Assistant] Video đã được thích trước đó, bỏ qua.');
+                        }
+                    });
+            }
+
+            if (settings.isAutoCommentEnabled && video.duration && !automationHasRun && (video.currentTime / video.duration) >= activationThreshold) {
                 automationHasRun = true;
                 clearInterval(progressCheckInterval);
                 sendMessagePromise({ action: 'isVideoInHistory', videoId: currentVideoId })
@@ -401,6 +450,7 @@ function initialize() {
     if (progressCheckInterval) clearInterval(progressCheckInterval);
 
     automationHasRun = false;
+    autoLikeHasRun = false;
     currentVideoId = getVideoIdFromUrl(window.location.href);
 
     createOrUpdateFloatingButtons();

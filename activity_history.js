@@ -14,12 +14,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const summaryHistoryBody = document.getElementById('summary-history-body');
     const noSummaryMsg = document.getElementById('no-summary-history');
 
+    // Like History Elements
+    const likeHistoryBody = document.getElementById('like-history-body');
+    const noLikeMsg = document.getElementById('no-like-history');
+
     // Transcript History Elements
     const transcriptHistoryGrid = document.getElementById('transcript-history-grid');
     const noTranscriptMsg = document.getElementById('no-transcript-history');
 
     let fullCommentHistory = [];
     let fullSummaryHistory = [];
+    let fullLikeHistory = [];
     let fullTranscriptHistory = [];
     let activeTab = 'comment-history';
 
@@ -47,15 +52,18 @@ document.addEventListener('DOMContentLoaded', () => {
         Promise.all([
             chrome.storage.local.get({ commentHistory: [] }),
             chrome.storage.local.get({ transcriptHistory: [] }),
-            chrome.storage.local.get({ summaryHistory: [] }) // Tải thêm lịch sử tóm tắt
-        ]).then(([commentResult, transcriptResult, summaryResult]) => {
+            chrome.storage.local.get({ summaryHistory: [] }),
+            chrome.storage.local.get({ likeHistory: [] }) 
+        ]).then(([commentResult, transcriptResult, summaryResult, likeResult]) => {
             fullCommentHistory = commentResult.commentHistory;
             fullTranscriptHistory = transcriptResult.transcriptHistory;
             fullSummaryHistory = summaryResult.summaryHistory;
+            fullLikeHistory = likeResult.likeHistory;
 
             renderCommentHistory(fullCommentHistory);
             renderTranscriptHistory(fullTranscriptHistory);
             renderSummaryHistory(fullSummaryHistory);
+            renderLikeHistory(fullLikeHistory);
 
             hideLoader();
         });
@@ -115,6 +123,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function renderLikeHistory(data) {
+        likeHistoryBody.innerHTML = '';
+        const hasData = data.length > 0;
+        noLikeMsg.style.display = hasData ? 'none' : 'block';
+        document.getElementById('like-history-table').style.display = hasData ? 'table' : 'none';
+
+        if (hasData) {
+            data.forEach(item => {
+                const videoId = new URL(item.videoUrl).searchParams.get('v');
+                const thumbnailUrl = videoId ? `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` : 'icons/icon128.png';
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <div class="video-info">
+                            <img src="${thumbnailUrl}" alt="Thumbnail" class="video-thumbnail">
+                            <a href="${item.videoUrl}" target="_blank">${item.videoUrl}</a>
+                        </div>
+                    </td>
+                    <td>${new Date(item.realTimestamp).toLocaleString('vi-VN')}</td>
+                `;
+                likeHistoryBody.appendChild(row);
+            });
+        }
+    }
+
 
     function renderTranscriptHistory(data) {
         transcriptHistoryGrid.innerHTML = '';
@@ -159,7 +192,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.videoUrl.toLowerCase().includes(searchTerm)
             );
             renderSummaryHistory(filtered);
-        } else { // transcript-history
+        } else if (activeTab === 'like-history') {
+            const filtered = fullLikeHistory.filter(item =>
+                item.videoUrl.toLowerCase().includes(searchTerm)
+            );
+            renderLikeHistory(filtered);
+        }
+        else { // transcript-history
             const filtered = fullTranscriptHistory.filter(item =>
                 item.title.toLowerCase().includes(searchTerm) ||
                 item.channelTitle.toLowerCase().includes(searchTerm)
@@ -181,6 +220,10 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'summary-history':
                 key = 'summaryHistory';
                 message = 'Bạn có chắc chắn muốn xóa toàn bộ lịch sử tóm tắt không?';
+                break;
+            case 'like-history':
+                key = 'likeHistory';
+                message = 'Bạn có chắc chắn muốn xóa toàn bộ lịch sử thích không?';
                 break;
             case 'transcript-history':
                 key = 'transcriptHistory';

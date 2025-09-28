@@ -28,6 +28,7 @@
         <div class="tab-navigation">
             <button class="tab-button active" data-tab="comment-history">Lịch sử Bình luận</button>
             <button class="tab-button" data-tab="summary-history">Lịch sử Tóm tắt</button>
+            <button class="tab-button" data-tab="like-history">Lịch sử Thích</button>
             <button class="tab-button" data-tab="transcript-history">Lịch sử Lời thoại</button>
         </div>
 
@@ -59,6 +60,19 @@
                     <tbody id="summary-history-body"></tbody>
                 </table>
                 <p id="no-summary-history" class="no-history-msg">Chưa có bản tóm tắt nào trong lịch sử.</p>
+            </div>
+
+            <div id="like-history" class="tab-panel">
+                <table id="like-history-table" class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Video</th>
+                            <th>Thời gian Thực</th>
+                        </tr>
+                    </thead>
+                    <tbody id="like-history-body"></tbody>
+                </table>
+                <p id="no-like-history" class="no-history-msg">Chưa có video nào được thích trong lịch sử.</p>
             </div>
 
 
