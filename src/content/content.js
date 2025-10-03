@@ -37,6 +37,7 @@ function getVideoTimestamp() {
     }
     return '00:00';
 }
+
 function scrollToElement(selector, blockOption = 'center') {
     return new Promise((resolve, reject) => {
         const element = document.querySelector(selector);

@@ -197,6 +197,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     realTimestamp: new Date().toISOString()
                 });
                 sendResponse({ success: true });
+            } else if (request.action === 'getVideoInfo') {
+                const responseText = await fetchFromApi(baseBody, 'infovideo');
+                const videoInfo = JSON.parse(responseText);
+                sendResponse({ success: true, details: videoInfo[0] });
             }
         } catch (error) {
             sendResponse({ success: false, error: error.message });

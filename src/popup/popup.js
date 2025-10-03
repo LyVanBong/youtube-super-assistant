@@ -2,6 +2,12 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- Lấy các Element ---
     const videoTitleEl = document.getElementById('video-title');
     const historyStatusEl = document.getElementById('history-status');
+    const videoDetailsEl = document.getElementById('video-details');
+    const videoThumbnailEl = document.getElementById('video-thumbnail');
+    const channelNameEl = document.getElementById('channel-name');
+    const viewCountEl = document.getElementById('view-count');
+    const likeCountEl = document.getElementById('like-count');
+    const publishDateEl = document.getElementById('publish-date');
 
     const aiActionsCard = document.getElementById('ai-actions-card');
     const defaultStateEl = document.getElementById('ai-actions-default');
@@ -215,6 +221,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 createCommentBtn.disabled = false;
                 summarizeBtn.disabled = false;
                 copyTranscriptBtn.disabled = false;
+
+                // Lấy và hiển thị thông tin chi tiết video từ API
+                sendMessageToBackground({ action: 'getVideoInfo', url: tab.url })
+                    .then(response => {
+                        if (response && response.details) {
+                            const { snippet = {}, statistics = {} } = response.details;
+                            videoThumbnailEl.src = snippet.thumbnails?.medium?.url || '../icons/icon128.png';
+                            channelNameEl.textContent = snippet.channelTitle || 'N/A';
+                            viewCountEl.textContent = Number(statistics.viewCount || 0).toLocaleString('vi-VN');
+                            likeCountEl.textContent = Number(statistics.likeCount || 0).toLocaleString('vi-VN');
+                            publishDateEl.textContent = snippet.publishedAt ? new Date(snippet.publishedAt).toLocaleDateString('vi-VN') : 'N/A';
+                            videoDetailsEl.classList.remove('hidden');
+                        }
+                    }).catch(err => {
+                        console.error("Lỗi khi lấy thông tin video từ API:", err);
+                    });
 
                 const response = await sendMessageToBackground({ action: 'isVideoInHistory', videoId: videoId });
                 if (response.isInHistory) {
