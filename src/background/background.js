@@ -1,4 +1,6 @@
 // Xử lý các tác vụ khi tiện ích được cài đặt hoặc cập nhật
+import * as cache from '../utils/cache.js';
+
 chrome.runtime.onInstalled.addListener((details) => {
     // Chỉ thực hiện khi người dùng cài đặt lần đầu tiên
     if (details.reason === 'install') {
@@ -116,6 +118,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 sendResponse({ success: true, content: commentText });
 
             } else if (request.action === 'summarizeVideo') {
+                const cacheKey = `summary_${request.url}`;
+                const cachedData = cache.get(cacheKey);
+
+                if (cachedData) {
+                    sendResponse({ success: true, content: cachedData });
+                    return;
+                }
+
                 // **LOGIC SỬA LỖI BẮT ĐẦU TỪ ĐÂY**
                 const responseText = await fetchFromApi(baseBody, 'summarize');
                 let summaryText;
@@ -134,6 +144,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     throw new Error("Không thể tóm tắt video này vì không có lời thoại.");
                 }
 
+                cache.set(cacheKey, summaryText);
                 saveSummaryToHistory({
                     videoUrl: request.url,
                     summaryContent: summaryText,
@@ -143,6 +154,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 sendResponse({ success: true, content: summaryText });
 
             } else if (request.action === 'getTranscriptText') {
+                const cacheKey = `transcript_${request.url}`;
+                const cachedData = cache.get(cacheKey);
+
+                if (cachedData) {
+                    sendResponse({ success: true, content: cachedData });
+                    return;
+                }
+
                 const responseText = await fetchFromApi(baseBody, 'transcripts');
                 const transcriptData = JSON.parse(responseText); // Lời thoại thường ổn định hơn và luôn là JSON
                 let rawTranscript = null;
@@ -164,6 +183,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
                 if (Array.isArray(rawTranscript) && rawTranscript.length > 0) {
                     const fullText = rawTranscript.map(seg => seg.text).join(' ');
+                    cache.set(cacheKey, fullText);
                     sendResponse({ success: true, content: fullText });
                 } else {
                     throw new Error("Không tìm thấy nội dung lời thoại hợp lệ.");
@@ -202,9 +222,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 });
                 sendResponse({ success: true });
             } else if (request.action === 'getVideoInfo') {
+                const cacheKey = `info_${request.url}`;
+                const cachedData = cache.get(cacheKey);
+
+                if (cachedData) {
+                    sendResponse({ success: true, details: cachedData });
+                    return;
+                }
+
                 const responseText = await fetchFromApi(baseBody, 'infovideo');
                 const videoInfo = JSON.parse(responseText);
-                sendResponse({ success: true, details: videoInfo[0] });
+                const details = videoInfo[0];
+                cache.set(cacheKey, details);
+                sendResponse({ success: true, details: details });
             }
         } catch (error) {
             sendResponse({ success: false, error: error.message });

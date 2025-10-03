@@ -1,3 +1,4 @@
+import * as cache from '../../utils/cache.js';
 document.addEventListener('DOMContentLoaded', () => {
     // --- Lấy các Element chính ---
     const loader = document.getElementById('loader-overlay');
@@ -131,6 +132,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- CÁC HÀM LOGIC CHÍNH ---
 
     async function fetchApiData(url, queryParam) {
+        const cacheKey = `${queryParam}_${url}`;
+        const cachedData = cache.get(cacheKey);
+        if (cachedData) {
+            return cachedData;
+        }
+
         const settings = await chrome.storage.sync.get(['accessToken', 'aiApiKey']);
         const token = settings.accessToken || '23105d20-3812-44c9-9906-8adf1fd5e69e';
         const API_URL = `https://workflow.softty.net/webhook/${token}?${queryParam}=true`;
@@ -144,10 +151,18 @@ document.addEventListener('DOMContentLoaded', () => {
             body: JSON.stringify({ url, aiApiKey: settings.aiApiKey || '', accessToken: settings.accessToken || '' })
         });
         if (!response.ok) throw new Error(`API ${queryParam} error: ${response.statusText}`);
-        return response.json();
+        const data = await response.json();
+        cache.set(cacheKey, data);
+        return data;
     }
 
     async function fetchSummaryFromUrl(videoUrl) {
+        const cacheKey = `summary_${videoUrl}`;
+        const cachedData = cache.get(cacheKey);
+        if (cachedData) {
+            return cachedData;
+        }
+
         const settings = await chrome.storage.sync.get(['accessToken', 'aiApiKey', 'aiLanguage']);
         const token = settings.accessToken || '23105d20-3812-44c9-9906-8adf1fd5e69e';
         const API_URL = `https://workflow.softty.net/webhook/${token}?summarize=true`;
@@ -170,12 +185,15 @@ document.addEventListener('DOMContentLoaded', () => {
             throw new Error(`Lỗi API: ${response.status} ${response.statusText}. ${errorText}`);
         }
         const responseText = await response.text();
+        let summary;
         try {
             const json = JSON.parse(responseText);
-            return json.summary || responseText;
+            summary = json.summary || responseText;
         } catch (e) {
-            return responseText;
+            summary = responseText;
         }
+        cache.set(cacheKey, summary);
+        return summary;
     }
 
     async function saveToTranscriptHistory(videoData, videoUrl) {
