@@ -13,6 +13,7 @@ let automationHasRun = false;
 let autoLikeHasRun = false;
 let progressCheckInterval;
 let currentVideoId = null;
+let isActionInProgress = false; // Khóa để ngăn các hành động chồng chéo
 
 // --- BỘ ICON SVG MỚI, CHI TIẾT HƠN ---
 const SVG_ICONS = {
@@ -25,7 +26,7 @@ const SVG_ICONS = {
 };
 
 // --- CÁC HÀM TRỢ GIÚP ---
-const humanizedDelay = (ms = 1000) => new Promise(res => setTimeout(res, ms));
+const randomizedDelay = (min, max) => new Promise(res => setTimeout(res, Math.random() * (max - min) + min));
 function getVideoIdFromUrl(url) { try { return new URLSearchParams(new URL(url).search).get('v'); } catch (e) { return null; } }
 function getVideoTimestamp() {
     const video = document.querySelector('video.html5-main-video');
@@ -175,14 +176,18 @@ async function runFullAutomation(expectedVideoId, commentContent = null) {
     try {
         console.log('[Super Assistant] Bắt đầu chuỗi tự động cho video:', expectedVideoId);
         checkContext();
+        
+        await randomizedDelay(1000, 3000); // Chờ ngẫu nhiên trước khi cuộn
         const commentBox = await scrollToElement('ytd-comments#comments');
-        await humanizedDelay(500);
+        await randomizedDelay(500, 1500); // Chờ sau khi cuộn xong
         checkContext();
 
         const placeholder = commentBox.querySelector('ytd-comment-simplebox-renderer #placeholder-area');
-        if (placeholder) placeholder.click();
-        await humanizedDelay(500);
-        checkContext();
+        if (placeholder) {
+            placeholder.click();
+            await randomizedDelay(800, 1800); // Chờ sau khi click vào ô bình luận
+            checkContext();
+        }
 
         let finalComment = commentContent;
         if (!finalComment) {
@@ -193,13 +198,21 @@ async function runFullAutomation(expectedVideoId, commentContent = null) {
         checkContext();
         const editableDiv = document.querySelector('ytd-commentbox #contenteditable-root');
         if (!editableDiv) throw new Error('Không tìm thấy ô nhập bình luận.');
+
+        // Mô phỏng thời gian gõ phím
+        const typingTime = finalComment.length * (Math.random() * (30 - 15) + 15); // 15-30ms mỗi ký tự
+        console.log(`[Super Assistant] Mô phỏng gõ phím trong ${typingTime.toFixed(0)}ms`);
+        await randomizedDelay(typingTime, typingTime + 500);
+        
         editableDiv.innerText = finalComment;
         editableDiv.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
-        await humanizedDelay(500);
+        await randomizedDelay(500, 1000); // Chờ sau khi điền xong bình luận
         checkContext();
 
         const submitButton = document.querySelector('ytd-commentbox #submit-button button:not([disabled])');
         if (!submitButton) throw new Error('Không tìm thấy nút gửi bình luận.');
+
+        await randomizedDelay(300, 900); // "Ngập ngừng" trước khi gửi
         submitButton.click();
 
         console.log('[Super Assistant] Đã gửi bình luận!');
@@ -207,27 +220,36 @@ async function runFullAutomation(expectedVideoId, commentContent = null) {
         console.warn('[Super Assistant] Lỗi trong chuỗi tự động:', error.message);
     }
 }
-function findAndClickLikeButton() {
+
+async function findAndClickLikeButton() {
     let attempts = 0;
     const maxAttempts = 10;
-    const interval = setInterval(() => {
+
+    while (attempts < maxAttempts) {
         const likeButton = document.querySelector('like-button-view-model button');
-        if (likeButton && likeButton.getAttribute('aria-pressed') === 'false') {
-            likeButton.click();
-            sendMessagePromise({ action: 'likeVideo', url: window.location.href });
-            console.log('[Super Assistant] Đã tự động thích video!');
-            clearInterval(interval);
-        } else if (likeButton && likeButton.getAttribute('aria-pressed') === 'true') {
-            console.log('[Super Assistant] Video đã được thích trước đó, bỏ qua.');
-            clearInterval(interval);
+
+        if (likeButton) {
+            if (likeButton.getAttribute('aria-pressed') === 'false') {
+                try {
+                    await randomizedDelay(500, 2000); // "Ngập ngừng" ngẫu nhiên trước khi thích
+                    likeButton.click();
+                    await sendMessagePromise({ action: 'likeVideo', url: window.location.href });
+                    console.log('[Super Assistant] Đã tự động thích video!');
+                    return; // Thành công, thoát hàm
+                } catch (error) {
+                    console.warn('[Super Assistant] Lỗi khi thực hiện hành động thích video:', error.message);
+                    return; // Thoát để giải phóng khóa
+                }
+            } else if (likeButton.getAttribute('aria-pressed') === 'true') {
+                console.log('[Super Assistant] Video đã được thích trước đó, bỏ qua.');
+                return; // Đã thích, thoát hàm
+            }
         }
         
         attempts++;
-        if (attempts >= maxAttempts) {
-            console.log('[Super Assistant] Không tìm thấy nút "Thích" sau nhiều lần thử.');
-            clearInterval(interval);
-        }
-    }, 1000);
+        await randomizedDelay(1500, 2000); // Chờ trước lần thử tiếp theo
+    }
+    console.log('[Super Assistant] Không tìm thấy nút "Thích" sau nhiều lần thử.');
 }
 
 function setupVideoProgressListener() {
@@ -254,10 +276,15 @@ function setupVideoProgressListener() {
         const likeMax = settings.autoLikePercentageMax / 100;
         const likeActivationThreshold = Math.random() * (likeMax - likeMin) + likeMin;
         
-        console.log(`[Super Assistant] Ngưỡng kích hoạt ngẫu nhiên: ${(activationThreshold * 100).toFixed(2)}%`);
+        console.log(`[Super Assistant] Ngưỡng kích hoạt bình luận: ${(activationThreshold * 100).toFixed(2)}%`);
         console.log(`[Super Assistant] Ngưỡng kích hoạt tự động thích: ${(likeActivationThreshold * 100).toFixed(2)}%`);
 
         progressCheckInterval = setInterval(() => {
+            if (isActionInProgress) {
+                console.log('[Super Assistant] Một hành động khác đang được thực hiện, tạm dừng kiểm tra.');
+                return;
+            }
+
             const isAdShowing = document.querySelector('.ad-showing');
             if (isAdShowing) {
                 console.log('[Super Assistant] Phát hiện quảng cáo, tạm dừng kiểm tra.');
@@ -266,32 +293,76 @@ function setupVideoProgressListener() {
                 return;
             }
 
-            if (settings.isAutoLikeEnabled && video.duration && !autoLikeHasRun && (video.currentTime / video.duration) >= likeActivationThreshold) {
-                autoLikeHasRun = true;
-                sendMessagePromise({ action: 'isVideoLiked', videoId: currentVideoId })
-                    .then(response => {
-                        if (!response.isLiked) {
-                            findAndClickLikeButton();
-                        } else {
-                            console.log('[Super Assistant] Video đã được thích trước đó, bỏ qua.');
-                        }
-                    });
+            const currentTime = video.currentTime;
+            const duration = video.duration;
+            if (!duration) return;
+
+            const currentProgress = currentTime / duration;
+
+            // Ưu tiên kiểm tra hành động có ngưỡng kích hoạt thấp hơn trước
+            const likeFirst = likeActivationThreshold <= activationThreshold;
+
+            const checkAndLike = () => {
+                if (settings.isAutoLikeEnabled && !autoLikeHasRun && currentProgress >= likeActivationThreshold) {
+                    autoLikeHasRun = true;
+                    isActionInProgress = true;
+                    console.log('[Super Assistant] Đang bắt đầu hành động tự động thích...');
+                    
+                    sendMessagePromise({ action: 'isVideoLiked', videoId: currentVideoId })
+                        .then(response => {
+                            if (!response.isLiked) {
+                                return findAndClickLikeButton();
+                            } else {
+                                console.log('[Super Assistant] Video đã được thích trước đó, bỏ qua.');
+                            }
+                        })
+                        .catch(err => console.warn('[Super Assistant] Lỗi khi kiểm tra lịch sử thích:', err.message))
+                        .finally(() => {
+                            console.log('[Super Assistant] Hành động tự động thích đã hoàn tất, giải phóng khóa.');
+                            isActionInProgress = false;
+                        });
+                    return true; // Đã thực hiện hành động
+                }
+                return false;
+            };
+
+            const checkAndComment = () => {
+                if (settings.isAutoCommentEnabled && !automationHasRun && currentProgress >= activationThreshold) {
+                    automationHasRun = true;
+                    isActionInProgress = true;
+                    console.log('[Super Assistant] Đang bắt đầu hành động tự động bình luận...');
+
+                    sendMessagePromise({ action: 'isVideoInHistory', videoId: currentVideoId })
+                        .then(response => {
+                            if (!response.isInHistory) {
+                                return runFullAutomation(currentVideoId, null).then(() => {
+                                    setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 2000);
+                                });
+                            } else {
+                                console.log('[Super Assistant] Video đã có trong lịch sử, bỏ qua tự động.');
+                            }
+                        })
+                        .catch(err => {
+                            console.warn('[Super Assistant] Lỗi khi kiểm tra lịch sử bình luận, vẫn thử bình luận:', err.message);
+                            return runFullAutomation(currentVideoId, null);
+                        })
+                        .finally(() => {
+                            console.log('[Super Assistant] Hành động tự động bình luận đã hoàn tất, giải phóng khóa.');
+                            isActionInProgress = false;
+                        });
+                    return true; // Đã thực hiện hành động
+                }
+                return false;
+            };
+
+            if (likeFirst) {
+                if (checkAndLike()) return; // Nếu đã thích, dừng kiểm tra trong chu kỳ này
+                if (checkAndComment()) return; // Nếu đã bình luận, dừng
+            } else {
+                if (checkAndComment()) return; // Nếu đã bình luận, dừng
+                if (checkAndLike()) return; // Nếu đã thích, dừng
             }
 
-            if (settings.isAutoCommentEnabled && video.duration && !automationHasRun && (video.currentTime / video.duration) >= activationThreshold) {
-                automationHasRun = true;
-                clearInterval(progressCheckInterval);
-                sendMessagePromise({ action: 'isVideoInHistory', videoId: currentVideoId })
-                    .then(response => {
-                        if (!response.isInHistory) {
-                            runFullAutomation(currentVideoId, null).then(() => {
-                                setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 2000);
-                            });
-                        } else {
-                            console.log('[Super Assistant] Video đã có trong lịch sử, bỏ qua tự động.');
-                        }
-                    }).catch(err => runFullAutomation(currentVideoId, null));
-            }
         }, 3000);
     });
 }
