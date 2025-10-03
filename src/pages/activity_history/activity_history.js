@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (hasData) {
             data.forEach(item => {
                 const videoId = new URL(item.videoUrl).searchParams.get('v');
-                const thumbnailUrl = videoId ? `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` : 'icons/icon128.png';
+                const thumbnailUrl = videoId ? `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` : '../../icons/icon128.png';
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>
@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (hasData) {
             data.forEach(item => {
                 const videoId = new URL(item.videoUrl).searchParams.get('v');
-                const thumbnailUrl = videoId ? `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` : 'icons/icon128.png';
+                const thumbnailUrl = videoId ? `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` : '../../icons/icon128.png';
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>
@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (hasData) {
             data.forEach(item => {
                 const videoId = new URL(item.videoUrl).searchParams.get('v');
-                const thumbnailUrl = videoId ? `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` : 'icons/icon128.png';
+                const thumbnailUrl = videoId ? `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` : '../../icons/icon128.png';
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>
@@ -168,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>`;
                 videoItem.addEventListener('click', () => {
                     chrome.storage.local.set({ transcriptVideoUrl: item.videoUrl }, () => {
-                        chrome.tabs.create({ url: 'transcript.html' });
+                        chrome.tabs.create({ url: chrome.runtime.getURL('pages/transcript/transcript.html') });
                     });
                 });
                 transcriptHistoryGrid.appendChild(videoItem);

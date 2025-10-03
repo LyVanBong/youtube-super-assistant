@@ -167,7 +167,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
             } else if (request.action === 'openTranscriptPage') {
                 await chrome.storage.local.set({ transcriptVideoUrl: request.videoUrl });
-                const transcriptPageUrl = chrome.runtime.getURL('transcript.html');
+                const transcriptPageUrl = chrome.runtime.getURL('pages/transcript/transcript.html');
                 await chrome.tabs.create({ url: transcriptPageUrl });
 
             } else if (request.action === 'isVideoInHistory') {
