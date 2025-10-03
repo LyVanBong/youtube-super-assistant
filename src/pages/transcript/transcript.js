@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const newEntry = {
             id: id, videoUrl: videoUrl, title: snippet.title || 'Không có tiêu đề',
             channelTitle: snippet.channelTitle || 'Không rõ',
-            thumbnailUrl: snippet.thumbnails?.medium?.url || 'icons/icon128.png'
+            thumbnailUrl: snippet.thumbnails?.medium?.url || '../../icons/icon128.png'
         };
         const result = await chrome.storage.local.get({ transcriptHistory: [] });
         let history = result.transcriptHistory.filter(item => item.id !== newEntry.id);

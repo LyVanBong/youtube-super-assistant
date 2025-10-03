@@ -1,22 +1,63 @@
 // webpack.config.js
 const path = require('path');
+const fs = require('fs');
 const CopyPlugin = require('copy-webpack-plugin');
 const WebpackObfuscator = require('webpack-obfuscator');
 
 module.exports = (env, argv) => {
   const isProduction = argv.mode === 'production';
+  const srcPath = path.resolve(__dirname, 'src');
+
+  const entryPoints = {
+    'background/background': './src/background/background.js',
+    'content/content': './src/content/content.js',
+  };
+
+  const copyPatterns = [
+    { from: 'src/manifest.json', to: 'manifest.json' },
+    { from: 'src/icons', to: 'icons' },
+  ];
+
+  // Function to get subdirectories
+  const getDirectories = (source) =>
+    fs.readdirSync(source, { withFileTypes: true })
+      .filter(dirent => dirent.isDirectory())
+      .map(dirent => dirent.name);
+
+  // Process 'popup'
+  const popupPath = path.join(srcPath, 'popup');
+  if (fs.existsSync(popupPath)) {
+    entryPoints['popup/popup'] = './src/popup/popup.js';
+    copyPatterns.push(
+      { from: 'src/popup/popup.html', to: 'popup/popup.html' },
+      { from: 'src/popup/popup.css', to: 'popup/popup.css' }
+    );
+  }
+
+  // Process 'pages'
+  const pagesDir = path.join(srcPath, 'pages');
+  if (fs.existsSync(pagesDir)) {
+    const pageNames = getDirectories(pagesDir);
+    pageNames.forEach(pageName => {
+      const pageJsPath = `./src/pages/${pageName}/${pageName}.js`;
+      const pageHtmlPath = `src/pages/${pageName}/${pageName}.html`;
+      const pageCssPath = `src/pages/${pageName}/${pageName}.css`;
+
+      if (fs.existsSync(path.resolve(__dirname, pageJsPath))) {
+        entryPoints[`pages/${pageName}/${pageName}`] = pageJsPath;
+      }
+      if (fs.existsSync(path.resolve(__dirname, pageHtmlPath))) {
+        copyPatterns.push({ from: pageHtmlPath, to: `pages/${pageName}/${pageName}.html` });
+      }
+      if (fs.existsSync(path.resolve(__dirname, pageCssPath))) {
+        copyPatterns.push({ from: pageCssPath, to: `pages/${pageName}/${pageName}.css` });
+      }
+    });
+  }
 
   return {
     mode: isProduction ? 'production' : 'development',
-    entry: {
-      background: './src/background/background.js',
-      content: './src/content/content.js',
-      popup: './src/popup/popup.js',
-      settings: './src/pages/settings/settings.js',
-      transcript: './src/pages/transcript/transcript.js',
-      activity_history: './src/pages/activity_history/activity_history.js',
-      about: './src/pages/about/about.js',
-    },
+    entry: entryPoints,
     output: {
       path: path.resolve(__dirname, 'dist'),
       filename: '[name].js',
@@ -24,20 +65,7 @@ module.exports = (env, argv) => {
     },
     plugins: [
       new CopyPlugin({
-        patterns: [
-          { from: 'src/manifest.json', to: 'manifest.json' },
-          { from: 'src/popup/popup.html', to: 'popup.html' },
-          { from: 'src/popup/popup.css', to: 'popup.css' },
-          { from: 'src/pages/settings/settings.html', to: 'settings.html' },
-          { from: 'src/pages/settings/settings.css', to: 'settings.css' },
-          { from: 'src/pages/transcript/transcript.html', to: 'transcript.html' },
-          { from: 'src/pages/transcript/transcript.css', to: 'transcript.css' },
-          { from: 'src/pages/activity_history/activity_history.html', to: 'activity_history.html' },
-          { from: 'src/pages/activity_history/activity_history.css', to: 'activity_history.css' },
-          { from: 'src/pages/about/about.html', to: 'about.html' },
-          { from: 'src/pages/about/about.css', to: 'about.css' },
-          { from: 'src/icons', to: 'icons' },
-        ],
+        patterns: copyPatterns,
       }),
       isProduction && new WebpackObfuscator({
         rotateStringArray: true,
