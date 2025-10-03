@@ -99,9 +99,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const settings = await chrome.storage.sync.get(['accessToken', 'aiApiKey']);
         const token = settings.accessToken || '23105d20-3812-44c9-9906-8adf1fd5e69e';
         const API_URL = `https://workflow.softty.net/webhook/${token}?${queryParam}=true`;
+        const extensionVersion = chrome.runtime.getManifest().version;
         const response = await fetch(API_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'version': extensionVersion
+            },
             body: JSON.stringify({ url, aiApiKey: settings.aiApiKey || '', accessToken: settings.accessToken || '' })
         });
         if (!response.ok) throw new Error(`API ${queryParam} error: ${response.statusText}`);

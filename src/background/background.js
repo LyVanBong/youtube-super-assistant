@@ -65,10 +65,14 @@ async function fetchFromApi(body, queryParam) {
     const settings = await chrome.storage.sync.get(['accessToken']);
     const token = settings.accessToken || '23105d20-3812-44c9-9906-8adf1fd5e69e';
     const API_URL = `https://workflow.softty.net/webhook/${token}${queryParam ? `?${queryParam}=true` : ''}`;
+    const extensionVersion = chrome.runtime.getManifest().version;
 
     const response = await fetch(API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            'version': extensionVersion
+        },
         body: JSON.stringify(body)
     });
 
