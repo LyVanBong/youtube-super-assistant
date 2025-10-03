@@ -70,9 +70,9 @@
 
             <main id="transcript-panel" class="transcript-panel loading">
                 <div class="toolbar">
-                    <input type="search" id="search-transcript" placeholder="Tìm kiếm trong lời thoại...">
+                    <input type="search" id="search-transcript" placeholder="Tìm từ khóa, nhiều từ cách nhau bằng dấu phẩy...">
                     <div class="copy-options-wrapper">
-                        <button id="copy-all-btn" class="main-copy-btn" title="Tùy chọn sao chép">
+                        <button id="copy-all-btn" class="toolbar-btn" title="Tùy chọn sao chép">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
                                 <path
                                     d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z">
@@ -89,10 +89,39 @@
                             <div class="dropdown-item" data-copy-type="full">Sao chép kèm thời gian</div>
                         </div>
                     </div>
+                    <button id="export-txt-btn" class="toolbar-btn" title="Xuất lời thoại ra file .txt">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        <span>Xuất File</span>
+                    </button>
                 </div>
-                <div id="transcript-content" class="card">
-                    <div class="spinner-container">
-                        <div class="spinner"></div>
+                <div class="card">
+                    <div id="summary-section">
+                        <div class="summary-header">
+                            <div class="summary-title">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9-9 9a9 9 0 0 1-9-9c0-7.2 1.8-9 9-9z"/><path d="M12 8v4l2 2"/><path d="M12 12h.01"/></svg>
+                                <h3>Tóm tắt AI</h3>
+                            </div>
+                            <div class="summary-actions">
+                                <button id="copy-summary-btn" class="icon-btn" title="Sao chép tóm tắt">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                </button>
+                                <button id="summarize-btn" class="icon-btn primary" title="Tạo tóm tắt từ lời thoại">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c7.2 0 9 1.8 9 9s-1.8 9-9 9a9 9 0 0 1-9-9c0-7.2 1.8-9 9-9z"/><path d="M12 8v4l2 2"/><path d="M12 12h.01"/></svg>
+                                    <span>Tạo tóm tắt</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="summary-content">
+                            <div class="spinner-container" style="display: none;">
+                                <div class="spinner"></div>
+                            </div>
+                            <p id="summary-text-content"></p>
+                        </div>
+                    </div>
+                    <div id="transcript-content">
+                        <div class="spinner-container">
+                            <div class="spinner"></div>
+                        </div>
                     </div>
                 </div>
             </main>

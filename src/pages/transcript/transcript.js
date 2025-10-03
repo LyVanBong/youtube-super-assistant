@@ -8,8 +8,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlError = document.getElementById('url-error');
     const infoPanel = document.getElementById('info-panel');
     const transcriptPanel = document.getElementById('transcript-panel');
-    
+    const summarizeBtn = document.getElementById('summarize-btn');
+    const summaryContent = document.getElementById('summary-content');
+    const summaryTextContent = document.getElementById('summary-text-content');
+    const summarySpinner = summaryContent.querySelector('.spinner-container');
+    const copySummaryBtn = document.getElementById('copy-summary-btn');
+
     let activePopover = null;
+    let rawTranscript = [];
+    let currentVideoUrl = '';
 
     // --- CÁC HÀM TIỆN ÍCH ---
     function createCopyPopover(getTextWithTimestamp, getTextOnly) {
@@ -29,17 +36,45 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function copyToClipboard(text, element) {
+        if (!text) return;
         navigator.clipboard.writeText(text).then(() => {
             const originalText = element.textContent;
+            const originalIcon = element.innerHTML;
             element.textContent = 'Đã sao chép!';
             element.style.color = '#2c974b';
             setTimeout(() => {
-                element.textContent = originalText;
+                if (element.id === 'copy-summary-btn') {
+                    element.innerHTML = originalIcon;
+                } else {
+                    element.textContent = originalText;
+                }
                 element.style.color = '';
                 if (activePopover) activePopover.classList.remove('show');
                 activePopover = null;
             }, 1500);
         });
+    }
+
+    function exportTranscriptAsTxt(text, videoId, element) {
+        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `transcript_${videoId}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        if (element) {
+            const originalText = element.textContent;
+            element.textContent = 'Đã xuất file!';
+            element.style.color = '#2c974b';
+            setTimeout(() => {
+                element.textContent = originalText;
+                element.style.color = '';
+            }, 1500);
+        }
     }
 
     function addCopyFunctionality(container, getText) {
@@ -111,7 +146,38 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!response.ok) throw new Error(`API ${queryParam} error: ${response.statusText}`);
         return response.json();
     }
-    
+
+    async function fetchSummaryFromUrl(videoUrl) {
+        const settings = await chrome.storage.sync.get(['accessToken', 'aiApiKey', 'aiLanguage']);
+        const token = settings.accessToken || '23105d20-3812-44c9-9906-8adf1fd5e69e';
+        const API_URL = `https://workflow.softty.net/webhook/${token}?summarize=true`;
+        const extensionVersion = chrome.runtime.getManifest().version;
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'version': extensionVersion
+            },
+            body: JSON.stringify({
+                url: videoUrl,
+                language: settings.aiLanguage || 'English',
+                aiApiKey: settings.aiApiKey || '',
+                accessToken: settings.accessToken || ''
+            })
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Lỗi API: ${response.status} ${response.statusText}. ${errorText}`);
+        }
+        const responseText = await response.text();
+        try {
+            const json = JSON.parse(responseText);
+            return json.summary || responseText;
+        } catch (e) {
+            return responseText;
+        }
+    }
+
     async function saveToTranscriptHistory(videoData, videoUrl) {
         if (!videoData || !videoData.id) return;
         const { id, snippet = {} } = videoData;
@@ -130,14 +196,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- CÁC HÀM RENDER ---
     function renderVideoInfo(data, videoUrl) {
         const videoData = data?.[0];
-        if (!videoData) { 
+        if (!videoData) {
             mainContent.classList.add('inactive'); // Ẩn nội dung nếu lỗi
             urlError.textContent = 'Không thể tải thông tin cho video này.';
-            return; 
+            return;
         }
         saveToTranscriptHistory(videoData, videoUrl);
         const { id, snippet = {}, statistics = {}, player = {}, contentDetails = {} } = videoData;
-        if (player.embedHtml) { document.getElementById('video-embed-container').innerHTML = player.embedHtml.replace(/width="\d+"/, 'width="100%"').replace(/height="\d+"/, 'height="100%"').replace('src="//', 'src="https://'); }
+        if (player.embedHtml) { document.getElementById('video-embed-container').innerHTML = player.embedHtml.replace(/width="\d+"/, 'width="100%"').replace(/height="\d+"/, 'height="100%"').replace('src="//', 'src="https://'); } // Fixed escaping for quotes within replace
         const videoTitle = document.getElementById('video-title');
         videoTitle.textContent = snippet.title || 'Không có tiêu đề';
         addCopyFunctionality(document.getElementById('title-section'), () => videoTitle.textContent);
@@ -179,22 +245,31 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderTranscript(data, videoId) {
         const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
         const transcriptContent = document.getElementById('transcript-content');
-        let rawTranscript = null;
-        if (!data || data.length === 0 || data[0]?.message === 'no transcript') { rawTranscript = []; } 
-        else { const transcriptResponse = data.find(item => item?.data?.transcripts);
-            if (transcriptResponse) { const transcriptData = transcriptResponse.data; const langCodeEntry = transcriptData.language_code?.[0];
-                const langCode = langCodeEntry?.code; if (langCode && transcriptData.transcripts[langCode]) {
-                    const transcripts = transcriptData.transcripts[langCode]; rawTranscript = transcripts.custom || transcripts.default || transcripts.auto;
+        const exportTxtBtn = document.getElementById('export-txt-btn');
+        let transcriptData = null;
+        if (!data || data.length === 0 || data[0]?.message === 'no transcript') { transcriptData = []; }
+        else {
+            const transcriptResponse = data.find(item => item?.data?.transcripts);
+            if (transcriptResponse) {
+                const data = transcriptResponse.data; const langCodeEntry = data.language_code?.[0];
+                const langCode = langCodeEntry?.code; if (langCode && data.transcripts[langCode]) {
+                    const transcripts = data.transcripts[langCode]; transcriptData = transcripts.custom || transcripts.default || transcripts.auto;
                 }
             }
         }
-        rawTranscript = Array.isArray(rawTranscript) ? rawTranscript : [];
+        rawTranscript = Array.isArray(transcriptData) ? transcriptData : [];
         transcriptContent.innerHTML = '';
+        summarizeBtn.disabled = rawTranscript.length === 0;
+        exportTxtBtn.disabled = rawTranscript.length === 0;
+        summaryTextContent.textContent = '';
+
         if (rawTranscript.length > 0) {
             const fullTranscriptTextOnly = rawTranscript.map(seg => seg.text).join('\n');
             const fullTranscriptWithTimestamp = rawTranscript.map(seg => `[${seg.start}] ${seg.text}`).join('\n');
             document.querySelector('#copy-dropdown .dropdown-item[data-copy-type="text"]').onclick = (e) => copyToClipboard(fullTranscriptTextOnly, e.target);
             document.querySelector('#copy-dropdown .dropdown-item[data-copy-type="full"]').onclick = (e) => copyToClipboard(fullTranscriptWithTimestamp, e.target);
+            exportTxtBtn.onclick = (e) => exportTranscriptAsTxt(fullTranscriptTextOnly, videoId, e.currentTarget.querySelector('span'));
+
             rawTranscript.forEach(segment => {
                 const segmentEl = document.createElement('div'); segmentEl.className = 'transcript-segment';
                 const timestampCol = document.createElement('div'); timestampCol.className = 'timestamp-col';
@@ -213,7 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     e.stopPropagation(); if (activePopover && activePopover !== popover) { activePopover.classList.remove('show', 'popover-bottom'); }
                     const buttonRect = copyBtn.getBoundingClientRect(); const containerRect = transcriptContent.getBoundingClientRect();
                     const popoverHeight = popover.offsetHeight || 80; popover.classList.toggle('show');
-                    if (buttonRect.top - popoverHeight < containerRect.top) { popover.classList.add('popover-bottom'); } 
+                    if (buttonRect.top - popoverHeight < containerRect.top) { popover.classList.add('popover-bottom'); }
                     else { popover.classList.remove('popover-bottom'); }
                     activePopover = popover.classList.contains('show') ? popover : null;
                 };
@@ -234,12 +309,14 @@ document.addEventListener('DOMContentLoaded', () => {
         mainContent.classList.remove('inactive');
         infoPanel.classList.add('loading');
         transcriptPanel.classList.add('loading');
+        summaryTextContent.textContent = ''; // Xóa tóm tắt cũ
+        currentVideoUrl = videoUrl;
 
         try {
             const infoPromise = fetchApiData(videoUrl, 'infovideo');
             const transcriptPromise = fetchApiData(videoUrl, 'transcripts');
             const [infoData, transcriptData] = await Promise.all([infoPromise, transcriptPromise]);
-            
+
             renderVideoInfo(infoData, videoUrl);
             const videoId = transcriptData?.[0]?.id || transcriptData?.[0]?.data?.videoId || getVideoIdFromUrl(videoUrl);
             renderTranscript(transcriptData, videoId);
@@ -247,7 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             console.error("Lỗi khi tải dữ liệu video:", err);
             urlError.textContent = `Lỗi: ${err.message}. Vui lòng thử lại.`;
-            mainContent.classList.add('inactive'); 
+            mainContent.classList.add('inactive');
         } finally {
             infoPanel.classList.remove('loading');
             transcriptPanel.classList.remove('loading');
@@ -255,7 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loader.classList.remove('show');
         }
     }
-    
+
     // --- KHỞI TẠO VÀ GÁN SỰ KIỆN ---
     async function initializePage() {
         const result = await chrome.storage.local.get('transcriptVideoUrl');
@@ -290,24 +367,62 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    summarizeBtn.addEventListener('click', async () => {
+        if (currentVideoUrl) {
+            summarySpinner.style.display = 'flex';
+            summaryTextContent.textContent = '';
+            summarizeBtn.disabled = true;
+            try {
+                const summary = await fetchSummaryFromUrl(currentVideoUrl);
+                summaryTextContent.textContent = summary;
+            } catch (error) {
+                console.error('Error summarizing transcript:', error);
+                summaryTextContent.textContent = `Lỗi khi tóm tắt: ${error.message}`;
+            } finally {
+                summarySpinner.style.display = 'none';
+                summarizeBtn.disabled = false;
+            }
+        } else {
+            summaryTextContent.textContent = 'Không có video để tóm tắt.';
+        }
+    });
+
+    copySummaryBtn.addEventListener('click', () => {
+        copyToClipboard(summaryTextContent.textContent, copySummaryBtn);
+    });
+
     initializePage();
 
     // --- Gán các sự kiện còn lại ---
     const searchInput = document.getElementById('search-transcript');
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase();
+            const searchTerms = e.target.value.toLowerCase().split(',').map(term => term.trim()).filter(term => term !== '');
+
             document.querySelectorAll('.transcript-segment').forEach(segment => {
                 const textSpan = segment.querySelector('.text');
-                const text = textSpan.textContent.toLowerCase();
-                if (searchTerm && text.includes(searchTerm)) {
-                    segment.style.display = 'flex';
-                    const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-                    textSpan.innerHTML = textSpan.textContent.replace(regex, '<span class="highlight">$1</span>');
-                } else {
-                    textSpan.innerHTML = textSpan.textContent;
-                    segment.style.display = searchTerm ? 'none' : 'flex';
+                const originalText = textSpan.textContent;
+                let newHtml = originalText;
+                let matchFound = false;
+
+                if (searchTerms.length > 0) {
+                    const keywordsRegex = searchTerms.map(term =>
+                        term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+                    );
+                    const regex = new RegExp(`(${keywordsRegex.join('|')})`, 'gi');
+
+                    if (regex.test(originalText.toLowerCase())) {
+                        matchFound = true;
+                        newHtml = originalText.replace(regex, (match) => {
+                            const lowerCaseMatch = match.toLowerCase();
+                            const termIndex = searchTerms.findIndex(term => term === lowerCaseMatch);
+                            return `<span class="highlight highlight-${termIndex % 5}">${match}</span>`;
+                        });
+                    }
                 }
+
+                textSpan.innerHTML = newHtml;
+                segment.style.display = searchTerms.length === 0 || matchFound ? 'flex' : 'none';
             });
         });
     }
