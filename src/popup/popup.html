@@ -14,8 +14,8 @@
     </div>
 
     <div class="main-content">
-        <div class="card" id="video-info-card">
-            <h4>Thông tin Video</h4>
+        <!-- Thẻ này chỉ hiển thị khi ở trang video YouTube -->
+        <div class="card hidden" id="video-info-card">
             <div class="video-info-container">
                 <p id="video-title">Hãy mở một video YouTube...</p>
                 <div id="video-details" class="video-details-grid hidden">
@@ -31,21 +31,79 @@
             </div>
         </div>
 
-        <div class="card" id="ai-actions-card">
-            <h4>Trung tâm AI</h4>
-            <div id="ai-actions-default">
-                <div class="action-buttons-grid three-cols">
-                    <button id="createCommentBtn" class="ai-action-btn">✨<br>Tạo BL</button>
-                    <button id="summarizeBtn" class="ai-action-btn">📄<br>Tóm tắt</button>
-                    <button id="copyTranscriptBtn" class="ai-action-btn">📝<br>Chép Lời thoại</button>
+        <!-- Giao diện chính của Dashboard -->
+        <div id="dashboard-view">
+            <div class="card" id="ai-actions-card">
+                <h4>Trung tâm AI</h4>
+                <div class="hero-actions">
+                    <button id="createCommentBtn" class="hero-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 5 2 5 5 2-5 2-2 5-2-5-5-2 5-2z"></path><path d="M18 8a6 6 0 0 1 6 6c0 6-6 6-6 6-1.5 0-2.8-.5-4-1.2"></path><path d="M12 18a6 6 0 0 1-6-6c0-6 6-6 6-6 1.5 0 2.8.5 4 1.2"></path></svg>
+                        <span>Tạo Bình Luận</span>
+                    </button>
+                    <button id="summarizeBtn" class="hero-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M8 8h8"></path><path d="M8 12h8"></path><path d="M8 16h4"></path></svg>
+                        <span>Tóm Tắt Video</span>
+                    </button>
                 </div>
             </div>
-            <div id="ai-actions-loading" class="hidden">
-                <div class="spinner"></div>
-                <p id="loading-status">Đang xử lý, vui lòng chờ...</p>
+
+            <div class="card" id="navigation-card">
+                <h4>Tất cả tính năng</h4>
+                <div class="action-grid">
+                    <button id="historyBtn" class="grid-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg>
+                        <span>Lịch sử</span>
+                    </button>
+                    <button id="transcriptBtn" class="grid-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16a2 2 0 0 0 2 2h-2Zm0 0v-4a2 2 0 0 1 2-2h4"></path><path d="M10 10h4"></path><path d="M10 14h4"></path><path d="M10 18h4"></path></svg>
+                        <span>Bản ghi</span>
+                    </button>
+                    <button id="settingsBtn" class="grid-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2l-.15.08a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1 0-2l.15-.08a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        <span>Cài đặt</span>
+                    </button>
+                    <button id="aboutBtn" class="grid-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+                        <span>Giới thiệu</span>
+                    </button>
+                </div>
             </div>
-            <div id="ai-actions-result" class="hidden">
-                <textarea id="ai-result-textarea" rows="6" placeholder="Kết quả từ AI sẽ xuất hiện ở đây..."></textarea>
+
+            <div class="card" id="quick-settings-card">
+                <h4>Cài đặt nhanh</h4>
+                <div class="setting-row">
+                    <label for="auto-like-toggle">Tự động thích</label>
+                    <label class="switch">
+                        <input type="checkbox" id="auto-like-toggle">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="setting-row">
+                    <label for="auto-toggle">Tự động bình luận</label>
+                    <label class="switch">
+                        <input type="checkbox" id="auto-toggle">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="setting-row">
+                    <label for="ai-language-select">Ngôn ngữ AI</label>
+                    <select id="ai-language-select">
+                        <option disabled selected>Đang tải...</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Giao diện khi đang xử lý AI -->
+        <div id="ai-processing-view" class="hidden">
+            <div class="card">
+                <div id="ai-actions-loading">
+                    <div class="spinner"></div>
+                    <p id="loading-status">Đang xử lý, vui lòng chờ...</p>
+                </div>
+            </div>
+            <div class="card hidden" id="ai-actions-result">
+                <textarea id="ai-result-textarea" rows="8" placeholder="Kết quả từ AI sẽ xuất hiện ở đây..."></textarea>
                 <div class="result-actions">
                     <button id="copyBtn">Sao chép</button>
                     <button id="commentNowBtn">Bình luận ngay</button>
@@ -55,47 +113,10 @@
             </div>
         </div>
 
-        <div class="card" id="quick-settings-card">
-            <h4>Cài đặt nhanh</h4>
-            <div class="setting-row">
-                <label for="auto-like-toggle">Tự động thích</label>
-                <label class="switch">
-                    <input type="checkbox" id="auto-like-toggle">
-                    <span class="slider round"></span>
-                </label>
-            </div>
-            <div class="setting-row">
-                <label for="auto-toggle">Tự động bình luận</label>
-                <label class="switch">
-                    <input type="checkbox" id="auto-toggle">
-                    <span class="slider round"></span>
-                </label>
-            </div>
-            <div class="setting-row">
-                <label for="ai-language-select">Ngôn ngữ AI</label>
-                <select id="ai-language-select">
-                    <option disabled selected>Đang tải...</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="footer-nav">
-            <a href="../pages/activity_history/activity_history.html" target="_blank" class="button" id="viewHistoryBtn">📜 Trung tâm Hoạt
-                động</a>
-            <a href="#" id="settingsBtn" class="button secondary">⚙️ Mở Cài đặt</a>
-        </div>
     </div>
 
     <div class="app-footer">
         <span id="version-info"></span>
-        <a href="../pages/about/about.html" target="_blank" id="about-link" title="Giới thiệu & Hỗ trợ">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="16" x2="12" y2="12"></line>
-                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-            </svg>
-        </a>
     </div>
 
     <script src="popup.js"></script>
