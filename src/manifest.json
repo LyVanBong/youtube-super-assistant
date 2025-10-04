@@ -11,8 +11,8 @@
     "clipboardWrite"
   ],
   "host_permissions": [
-    "https://workflow.softty.net/*",
-    "*://*.youtube.com/*"
+    "https://*.youtube.com/*",
+    "https://workflow.softty.net/*"
   ],
   "action": {
     "default_popup": "popup/popup.html",

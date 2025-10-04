@@ -38,150 +38,164 @@ document.addEventListener('DOMContentLoaded', function () {
     const languageSelect = document.getElementById('ai-language-select');
     const versionInfoEl = document.getElementById('version-info');
 
-    let currentTab = null;
-    let lastAction = null; // 'comment' or 'summary'
-
-    // --- Quản lý Trạng thái UI --- //
-    function setUiView(view) {
-        dashboardView.classList.toggle('hidden', view !== 'dashboard');
-        aiProcessingView.classList.toggle('hidden', view !== 'processing');
-    }
-
-    function setAiResultState(state) {
-        loadingStateEl.classList.toggle('hidden', state !== 'loading');
-        resultStateEl.classList.toggle('hidden', state !== 'result');
-
-        if (state === 'loading') {
-            if (lastAction === 'summary') {
-                loadingStatusEl.textContent = 'Đang tóm tắt...';
-            } else if (lastAction === 'comment') {
-                loadingStatusEl.textContent = 'Đang tạo bình luận...';
+        const updateNotificationBar = document.getElementById('update-notification-bar');
+        const viewUpdateBtn = document.getElementById('view-update-btn');
+    
+        let currentTab = null;
+        let lastAction = null; // 'comment' or 'summary'
+    
+        // --- Quản lý Trạng thái UI --- //
+        function setUiView(view) {
+            dashboardView.classList.toggle('hidden', view !== 'dashboard');
+            aiProcessingView.classList.toggle('hidden', view !== 'processing');
+        }
+    
+        function setAiResultState(state) {
+            loadingStateEl.classList.toggle('hidden', state !== 'loading');
+            resultStateEl.classList.toggle('hidden', state !== 'result');
+    
+            if (state === 'loading') {
+                if (lastAction === 'summary') {
+                    loadingStatusEl.textContent = 'Đang tóm tắt...';
+                } else if (lastAction === 'comment') {
+                    loadingStatusEl.textContent = 'Đang tạo bình luận...';
+                }
+            } else if (state === 'result') {
+                commentNowBtn.classList.toggle('hidden', lastAction === 'summary');
             }
-        } else if (state === 'result') {
-            commentNowBtn.classList.toggle('hidden', lastAction === 'summary');
         }
-    }
-
-    // --- Hàm gửi Tin nhắn --- //
-    function sendMessageToBackground(message) {
-        return new Promise((resolve, reject) => {
-            chrome.runtime.sendMessage(message, (response) => {
-                if (chrome.runtime.lastError) {
-                    return reject(new Error(chrome.runtime.lastError.message));
-                }
-                if (response && response.success) {
-                    resolve(response);
-                } else {
-                    reject(new Error(response ? response.error : 'Lỗi không xác định.'));
-                }
-            });
-        });
-    }
-
-    // --- Xử lý các Hành động AI --- //
-    async function handleAiAction(actionType) {
-        if (!currentTab || !currentTab.url) return;
-        lastAction = actionType;
-        setUiView('processing');
-        setAiResultState('loading');
-
-        try {
-            const response = await chrome.tabs.sendMessage(currentTab.id, { action: "getTimestamp" });
-            const timestamp = response ? response.timestamp : '00:00';
-
-            const message = {
-                action: actionType === 'comment' ? 'createComment' : 'summarizeVideo',
-                url: currentTab.url,
-                timestamp: timestamp
-            };
-
-            const result = await sendMessageToBackground(message);
-            resultTextarea.value = result.content;
-            setAiResultState('result');
-
-        } catch (error) {
-            alert(`Lỗi: ${error.message}`);
-            setUiView('dashboard');
-        }
-    }
-
-    // --- Hàm tải danh sách ngôn ngữ --- //
-    async function populateLanguages() {
-        try {
-            const response = await fetch('https://restcountries.com/v3.1/independent?status=true&fields=languages');
-            if (!response.ok) throw new Error('Network response was not ok');
-            const countries = await response.json();
-            const languageMap = new Map();
-            countries.forEach(country => {
-                if (country.languages) {
-                    for (const code in country.languages) {
-                        const name = country.languages[code];
-                        if (!languageMap.has(name)) languageMap.set(name, name);
+    
+        // --- Hàm gửi Tin nhắn --- //
+        function sendMessageToBackground(message) {
+            return new Promise((resolve, reject) => {
+                chrome.runtime.sendMessage(message, (response) => {
+                    if (chrome.runtime.lastError) {
+                        return reject(new Error(chrome.runtime.lastError.message));
                     }
-                }
-            });
-            const sortedLanguages = [...languageMap.keys()].sort((a, b) => a.localeCompare(b));
-            languageSelect.innerHTML = '';
-            sortedLanguages.forEach(langName => {
-                const option = document.createElement('option');
-                option.value = langName;
-                option.textContent = langName;
-                languageSelect.appendChild(option);
-            });
-        } catch (error) {
-            console.error('Failed to fetch languages:', error);
-            languageSelect.innerHTML = '<option value="English">English</option><option value="Vietnamese">Tiếng Việt</option>';
-        } finally {
-            // Tải cài đặt ngôn ngữ đã lưu sau khi tải xong
-            chrome.storage.sync.get({ aiLanguage: 'English' }, (data) => {
-                if ([...languageSelect.options].some(o => o.value === data.aiLanguage)) {
-                    languageSelect.value = data.aiLanguage;
-                } else {
-                    languageSelect.value = 'English';
-                }
+                    if (response && response.success) {
+                        resolve(response);
+                    }
+                    else {
+                        reject(new Error(response ? response.error : 'Lỗi không xác định.'));
+                    }
+                });
             });
         }
-    }
-
-    // --- Gán các Sự kiện --- //
-    createCommentBtn.addEventListener('click', () => handleAiAction('comment'));
-    summarizeBtn.addEventListener('click', () => handleAiAction('summary'));
-
-    historyBtn.addEventListener('click', () => chrome.tabs.create({ url: chrome.runtime.getURL('pages/activity_history/activity_history.html') }));
-    transcriptBtn.addEventListener('click', () => chrome.tabs.create({ url: chrome.runtime.getURL('pages/transcript/transcript.html') }));
-    settingsBtn.addEventListener('click', () => chrome.runtime.openOptionsPage());
-    aboutBtn.addEventListener('click', () => chrome.tabs.create({ url: chrome.runtime.getURL('pages/about/about.html') }));
-
-    backBtn.addEventListener('click', () => setUiView('dashboard'));
-    regenerateBtn.addEventListener('click', () => handleAiAction(lastAction));
-    copyBtn.addEventListener('click', () => {
-        navigator.clipboard.writeText(resultTextarea.value).then(() => {
-            copyBtn.textContent = 'Đã sao chép!';
-            setTimeout(() => { copyBtn.textContent = 'Sao chép'; }, 1500);
+    
+        // --- Xử lý các Hành động AI --- //
+        async function handleAiAction(actionType) {
+            if (!currentTab || !currentTab.url) return;
+            lastAction = actionType;
+            setUiView('processing');
+            setAiResultState('loading');
+    
+            try {
+                const response = await chrome.tabs.sendMessage(currentTab.id, { action: "getTimestamp" });
+                const timestamp = response ? response.timestamp : '00:00';
+    
+                const message = {
+                    action: actionType === 'comment' ? 'createComment' : 'summarizeVideo',
+                    url: currentTab.url,
+                    timestamp: timestamp
+                };
+    
+                const result = await sendMessageToBackground(message);
+                resultTextarea.value = result.content;
+                setAiResultState('result');
+    
+            } catch (error) {
+                alert(`Lỗi: ${error.message}`);
+                setUiView('dashboard');
+            }
+        }
+        
+        // --- Hàm tải danh sách ngôn ngữ --- //
+        async function populateLanguages() {
+            try {
+                const response = await fetch('https://restcountries.com/v3.1/independent?status=true&fields=languages');
+                if (!response.ok) throw new Error('Network response was not ok');
+                const countries = await response.json();
+                const languageMap = new Map();
+                countries.forEach(country => {
+                    if (country.languages) {
+                        for (const code in country.languages) {
+                            const name = country.languages[code];
+                            if (!languageMap.has(name)) languageMap.set(name, name);
+                        }
+                    }
+                });
+                const sortedLanguages = [...languageMap.keys()].sort((a, b) => a.localeCompare(b));
+                languageSelect.innerHTML = '';
+                sortedLanguages.forEach(langName => {
+                    const option = document.createElement('option');
+                    option.value = langName;
+                    option.textContent = langName;
+                    languageSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Failed to fetch languages:', error);
+                languageSelect.innerHTML = '<option value="English">English</option><option value="Vietnamese">Tiếng Việt</option>';
+            } finally {
+                 // Tải cài đặt ngôn ngữ đã lưu sau khi tải xong
+                chrome.storage.sync.get({ aiLanguage: 'English' }, (data) => {
+                    if ([...languageSelect.options].some(o => o.value === data.aiLanguage)) {
+                        languageSelect.value = data.aiLanguage;
+                    } else {
+                        languageSelect.value = 'English';
+                    }
+                });
+            }
+        }
+    
+        // --- Gán các Sự kiện --- //
+        createCommentBtn.addEventListener('click', () => handleAiAction('comment'));
+        summarizeBtn.addEventListener('click', () => handleAiAction('summary'));
+    
+        historyBtn.addEventListener('click', () => chrome.tabs.create({ url: chrome.runtime.getURL('pages/activity_history/activity_history.html') }));
+        transcriptBtn.addEventListener('click', () => chrome.tabs.create({ url: chrome.runtime.getURL('pages/transcript/transcript.html') }));
+        settingsBtn.addEventListener('click', () => chrome.runtime.openOptionsPage());
+        aboutBtn.addEventListener('click', () => chrome.tabs.create({ url: chrome.runtime.getURL('pages/about/about.html') }));
+    
+        backBtn.addEventListener('click', () => setUiView('dashboard'));
+        regenerateBtn.addEventListener('click', () => handleAiAction(lastAction));
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(resultTextarea.value).then(() => {
+                copyBtn.textContent = 'Đã sao chép!';
+                setTimeout(() => { copyBtn.textContent = 'Sao chép'; }, 1500);
+            });
         });
-    });
-    commentNowBtn.addEventListener('click', () => {
-        if (!currentTab) return;
-        chrome.tabs.sendMessage(currentTab.id, { action: "commentNow", content: resultTextarea.value });
-        window.close();
-    });
-
-    autoToggle.addEventListener('change', () => chrome.storage.sync.set({ isAutoCommentEnabled: autoToggle.checked }));
-    autoLikeToggle.addEventListener('change', () => chrome.storage.sync.set({ isAutoLikeEnabled: autoLikeToggle.checked }));
-    languageSelect.addEventListener('change', () => chrome.storage.sync.set({ aiLanguage: languageSelect.value }));
-
-    // --- Khởi tạo Popup --- //
-    async function initialize() {
-        const manifest = chrome.runtime.getManifest();
-        versionInfoEl.textContent = `v${manifest.version}`;
-
-        populateLanguages();
-
-        chrome.storage.sync.get({ isAutoCommentEnabled: true, isAutoLikeEnabled: true }, (data) => {
-            autoToggle.checked = data.isAutoCommentEnabled;
-            autoLikeToggle.checked = data.isAutoLikeEnabled;
+        commentNowBtn.addEventListener('click', () => {
+            if (!currentTab) return;
+            chrome.tabs.sendMessage(currentTab.id, { action: "commentNow", content: resultTextarea.value });
+            window.close();
         });
-
+    
+        autoToggle.addEventListener('change', () => chrome.storage.sync.set({ isAutoCommentEnabled: autoToggle.checked }));
+        autoLikeToggle.addEventListener('change', () => chrome.storage.sync.set({ isAutoLikeEnabled: autoLikeToggle.checked }));
+        languageSelect.addEventListener('change', () => chrome.storage.sync.set({ aiLanguage: languageSelect.value }));
+    
+        // --- Khởi tạo Popup --- //
+        async function initialize() {
+            const manifest = chrome.runtime.getManifest();
+            versionInfoEl.textContent = `v${manifest.version}`;
+    
+            // Kiểm tra và hiển thị thông báo phiên bản mới
+            chrome.storage.local.get('newVersionInfo', (result) => {
+                if (result.newVersionInfo) {
+                    updateNotificationBar.classList.remove('hidden');
+                    viewUpdateBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        chrome.runtime.sendMessage({ action: "openUpdateNotesPage" });
+                    });
+                }
+            });
+    
+            populateLanguages();
+    
+            chrome.storage.sync.get({ isAutoCommentEnabled: true, isAutoLikeEnabled: true }, (data) => {
+                autoToggle.checked = data.isAutoCommentEnabled;
+                autoLikeToggle.checked = data.isAutoLikeEnabled;
+            });
         try {
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
             currentTab = tab;
