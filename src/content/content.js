@@ -538,6 +538,33 @@ function initialize() {
     }
 }
 
+function displayUpdateBanner(version) {
+    if (document.getElementById('sa-update-banner')) return;
+    const banner = document.createElement('div');
+    banner.id = 'sa-update-banner';
+    Object.assign(banner.style, {
+        position: 'fixed', top: '55px', right: '10px', backgroundColor: '#283593',
+        color: 'white', padding: '10px 15px', borderRadius: '8px', zIndex: '99999',
+        fontSize: '14px', fontWeight: '500', display: 'flex', alignItems: 'center',
+        gap: '15px', boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
+    });
+    banner.innerHTML = `<img src="${chrome.runtime.getURL('icons/icon48.png')}" style="width: 24px; height: 24px; vertical-align: middle;"> <span style="vertical-align: middle;">Super Assistant có bản cập nhật mới!</span>`;
+    const viewButton = document.createElement('button');
+    viewButton.innerText = 'Xem ngay';
+    Object.assign(viewButton.style, { padding: '5px 10px', border: 'none', borderRadius: '5px', backgroundColor: '#ffffff', color: '#283593', cursor: 'pointer', fontWeight: 'bold' });
+    const closeButton = document.createElement('span');
+    closeButton.innerHTML = '&times;';
+    Object.assign(closeButton.style, { fontSize: '20px', cursor: 'pointer', marginLeft: '10px', lineHeight: '1' });
+    viewButton.onclick = () => chrome.runtime.sendMessage({ action: "openUpdateNotesPage" });
+    closeButton.onclick = () => {
+        chrome.runtime.sendMessage({ action: "userDismissedVersion", version: version });
+        banner.remove();
+    };
+    banner.appendChild(viewButton);
+    banner.appendChild(closeButton);
+    document.body.appendChild(banner);
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "ytHistoryUpdated") {
         setTimeout(initialize, 500);
@@ -546,6 +573,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     } else if (request.action === "commentNow") {
         runFullAutomation(getVideoIdFromUrl(window.location.href), request.content)
             .catch(err => alert(`Không thể tự động bình luận: ${err.message}`));
+    } else if (request.action === "showUpdateBanner") {
+        displayUpdateBanner(request.version);
     }
     return true;
 });

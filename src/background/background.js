@@ -45,44 +45,21 @@ async function fetchFromApi(body, queryParam) {
 // LOGIC KIỂM TRA PHIÊN BẢN MỚI
 // ====================================================================
 
-function displayBannerInPage(version, logoUrl) {
-    if (document.getElementById('sa-update-banner')) return;
-    const banner = document.createElement('div');
-    banner.id = 'sa-update-banner';
-    Object.assign(banner.style, {
-        position: 'fixed', top: '10px', right: '10px', backgroundColor: '#283593',
-        color: 'white', padding: '10px 15px', borderRadius: '8px', zIndex: '99999',
-        fontSize: '14px', fontWeight: '500', display: 'flex', alignItems: 'center',
-        gap: '15px', boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
-    });
-    banner.innerHTML = `<img src="${logoUrl}" style="width: 24px; height: 24px; vertical-align: middle;"> <span style="vertical-align: middle;">Super Assistant có bản cập nhật mới!</span>`;
-    const viewButton = document.createElement('button');
-    viewButton.innerText = 'Xem ngay';
-    Object.assign(viewButton.style, { padding: '5px 10px', border: 'none', borderRadius: '5px', backgroundColor: '#ffffff', color: '#283593', cursor: 'pointer', fontWeight: 'bold' });
-    const closeButton = document.createElement('span');
-    closeButton.innerHTML = '&times;';
-    Object.assign(closeButton.style, { fontSize: '20px', cursor: 'pointer', marginLeft: '10px', lineHeight: '1' });
-    viewButton.onclick = () => chrome.runtime.sendMessage({ action: "openUpdateNotesPage" });
-    closeButton.onclick = () => {
-        chrome.runtime.sendMessage({ action: "userDismissedVersion", version: version });
-        banner.remove();
-    };
-    banner.appendChild(viewButton);
-    banner.appendChild(closeButton);
-    document.body.appendChild(banner);
-}
-
 async function checkAndShowBanner(tabId) {
     try {
         const { newVersionInfo, dismissedVersion } = await chrome.storage.local.get(['newVersionInfo', 'dismissedVersion']);
         if (newVersionInfo && newVersionInfo.version !== dismissedVersion) {
-            chrome.scripting.executeScript({
-                target: { tabId: tabId },
-                func: displayBannerInPage,
-                args: [newVersionInfo.version, chrome.runtime.getURL('icons/icon48.png')]
-            }).catch(err => {});
+            // Gửi tin nhắn đến content script thay vì thực thi script trực tiếp
+            chrome.tabs.sendMessage(tabId, {
+                action: "showUpdateBanner",
+                version: newVersionInfo.version
+            }).catch(err => { 
+                // Bỏ qua lỗi nếu content script chưa sẵn sàng, nó sẽ tự kiểm tra khi tải xong
+            });
         }
-    } catch (e) {}
+    } catch (e) {
+        // Bỏ qua lỗi nếu không thể truy cập storage
+    }
 }
 
 async function handleVersionCheck() {
