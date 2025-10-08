@@ -99,3 +99,79 @@ Lệnh này sẽ thực hiện các công việc sau:
   * Tối ưu hóa các file cho môi trường production.
 
 Sau khi chạy lệnh này, toàn bộ tiện ích sẵn sàng để sử dụng sẽ nằm trong thư mục `dist`. Bạn có thể nén thư mục này thành file `.zip` để tải lên Chrome Web Store hoặc tải trực tiếp thư mục này vào Chrome ở chế độ nhà phát triển (Developer Mode).
+
+---
+
+## 🏛️ Kiến trúc Dự án (Project Architecture)
+
+Dự án này tuân theo một kiến trúc hiện đại, có khả năng mở rộng cao, lấy cảm hứng từ **Feature-Sliced Design (FSD)**. Triết lý cốt lõi là phân tách mã nguồn theo các lát cắt tính năng (feature slices) và phân lớp (layers) một cách rõ ràng.
+
+### Nguyên tắc chính
+
+1.  **Phân lớp (Layered Architecture):** Mã nguồn được chia thành các lớp có sự phụ thuộc một chiều. Lớp cao hơn có thể sử dụng lớp thấp hơn, nhưng không được ngược lại. Điều này giúp giảm sự耦合 (coupling) và tăng tính module hóa.
+2.  **Phân lát theo tính năng (Sliced by Feature):** Thay vì nhóm file theo loại (ví dụ: `components`, `hooks`), chúng ta nhóm chúng theo chức năng nghiệp vụ mà chúng phục vụ.
+
+### Cấu trúc thư mục
+
+Đây là cấu trúc thư mục chính trong `src/`:
+
+```
+src/
+├── app/         # Lớp cao nhất, khởi tạo ứng dụng
+├── pages/       # Các trang hoàn chỉnh (ví dụ: trang Cài đặt)
+├── features/    # Các chức năng nghiệp vụ người dùng có thể tương tác
+├── entities/    # Các thực thể nghiệp vụ cốt lõi (ví dụ: Video, Comment)
+└── shared/      # Mã nguồn chung, có thể tái sử dụng ở bất kỳ đâu
+```
+
+--- 
+
+### Chức năng của từng lớp
+
+#### 📂 `app`
+Lớp cao nhất, chịu trách nhiệm khởi tạo toàn bộ ứng dụng dashboard.
+- **Chứa:**
+  - `index.tsx`: Điểm vào (entry point) chính của ứng dụng React, thiết lập layout và routing.
+  - `styles/`: Chứa các file CSS toàn cục.
+  - `providers/`: (Dành cho tương lai) Chứa các React Context Provider (ví dụ: Theme, Auth).
+- **Phụ thuộc:** Có thể sử dụng tất cả các lớp bên dưới.
+
+#### 📂 `pages`
+Đại diện cho một màn hình hoàn chỉnh mà người dùng thấy trên dashboard.
+- **Chứa:** Các thư mục con, mỗi thư mục là một trang (ví dụ: `settings/`, `history/`). Một trang được lắp ráp từ các `features` và `entities`.
+- **Phụ thuộc:** Có thể sử dụng `features`, `entities`, và `shared`.
+- **Quy tắc:** Không được phép import từ `app` hoặc từ một `page` khác.
+
+#### 📂 `features`
+Một phần chức năng nghiệp vụ mà người dùng có thể tương tác.
+- **Ví dụ:** `AiActions` (các nút tạo bình luận/tóm tắt AI), `HistoryFilter` (bộ lọc lịch sử).
+- **Chứa:** Các component React, hook, và logic cần thiết cho một tính năng cụ thể.
+- **Phụ thuộc:** Có thể sử dụng `entities` và `shared`.
+- **Quy tắc:** Không được phép import từ `app` hoặc `pages`.
+
+#### 📂 `entities`
+Các thực thể nghiệp vụ cốt lõi của ứng dụng. Chúng không có logic nghiệp vụ phức tạp mà chỉ định nghĩa dữ liệu và cách hiển thị.
+- **Ví dụ:** `History` (định nghĩa một `HistoryItem` và cách nó hiển thị trong bảng).
+- **Chứa:**
+  - `ui/`: Các component để hiển thị thực thể (ví dụ: `HistoryTable`).
+  - `model.ts`: Các interface TypeScript định nghĩa cấu trúc dữ liệu.
+- **Phụ thuộc:** Chỉ có thể sử dụng `shared`.
+
+#### 📂 `shared`
+Lớp thấp nhất, chứa mọi thứ có thể tái sử dụng và hoàn toàn độc lập với logic nghiệp vụ.
+- **Chứa:**
+  - `api/`: Các hàm giao tiếp với API bên ngoài.
+  - `lib/`: Các hàm tiện ích chung, các custom hook có thể tái sử dụng.
+  - `ui/`: Bộ UI Kit chung của ứng dụng (ví dụ: `Layout`, `Sidebar`, `Card`, `Button`).
+- **Phụ thuộc:** Không phụ thuộc vào bất kỳ lớp nào khác trong dự án.
+
+### Luồng hoạt động (Ví dụ)
+
+1.  Người dùng truy cập `dashboard.html`.
+2.  `app/index.tsx` được chạy. Nó render ra `shared/ui/Layout`.
+3.  Dựa trên URL hash (ví dụ: `#history`), `app/index.tsx` quyết định render `pages/history`.
+4.  `pages/history` lấy dữ liệu từ `chrome.storage` (sử dụng hook từ `shared/lib`) và có thể hiển thị một `features/HistoryFilter`.
+5.  Dữ liệu lịch sử được truyền xuống `entities/History/ui/HistoryTable` để hiển thị.
+6.  Tất cả các component trên đều sử dụng các component cơ bản từ `shared/ui` như `Card`, `Button`.
+
+Kiến trúc này giúp dự án trở nên dễ đoán, dễ tìm kiếm và cực kỳ dễ dàng để thêm các tính năng mới mà không làm ảnh hưởng đến các phần khác.

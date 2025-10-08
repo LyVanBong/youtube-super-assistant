@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom/client';
-import './transcript.css';
+import './style.css';
 
 // --- Type Definitions ---
 type Segment = { start: string; text: string };

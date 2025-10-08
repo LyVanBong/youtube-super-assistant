@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './update_notes.css';
+import './style.css';
 
 const UpdateNotes = () => {
   const [notes, setNotes] = useState('');

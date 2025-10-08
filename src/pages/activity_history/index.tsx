@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import './activity_history.css';
+import './style.css';
 
 // --- Type Definitions ---
 interface HistoryItem {

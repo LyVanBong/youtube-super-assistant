@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import './settings.css';
+import './style.css';
 
 // Define the type for our settings
 interface SettingsData {

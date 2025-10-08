@@ -10,8 +10,8 @@ module.exports = (env, argv) => {
     entry: {
       'background/background': './src/background/background.ts',
       'content/content': './src/content/content.ts',
-      'popup/popup': './src/ui/popup/Popup.tsx',
-      'dashboard': './src/ui/Dashboard.tsx',
+      'popup/popup': './src/features/popup/Popup.tsx',
+      'dashboard': './src/app/index.tsx',
     },
     output: {
       path: path.resolve(__dirname, 'dist'),
@@ -39,12 +39,12 @@ module.exports = (env, argv) => {
         ],
       }),
       new HtmlWebpackPlugin({
-        template: './src/ui/template.html',
+        template: './src/shared/template.html',
         filename: 'popup/popup.html',
         chunks: ['popup/popup'],
       }),
       new HtmlWebpackPlugin({
-        template: './src/ui/template.html',
+        template: './src/shared/template.html',
         filename: 'dashboard.html',
         chunks: ['dashboard'],
       }),

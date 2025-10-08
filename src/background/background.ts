@@ -1,8 +1,8 @@
-import * as cache from '../utils/cache';
-import * as history from '../utils/history';
-import * as api from '../services/api';
-import * as versioning from '../services/versioning';
-import { parseTranscript } from '../utils/transcript-parser';
+import * as cache from '../shared/lib/cache';
+import * as history from '../shared/lib/history';
+import * as api from '../shared/api/api';
+import * as versioning from '../shared/api/versioning';
+import { parseTranscript } from '../shared/lib/transcript-parser';
 
 // ====================================================================
 // ĐỊNH NGHĨA KIỂU DỮ LIỆU
