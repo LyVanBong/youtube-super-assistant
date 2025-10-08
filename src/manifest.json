@@ -40,12 +40,12 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "options_page": "pages/settings/settings.html",
+  "options_page": "dashboard.html",
   "web_accessible_resources": [
     {
       "resources": [
         "icons/icon48.png",
-        "pages/about/about.html"
+        "dashboard.html"
       ],
       "matches": [
         "*://*.youtube.com/*"

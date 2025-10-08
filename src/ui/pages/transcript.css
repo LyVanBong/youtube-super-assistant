@@ -1,0 +1,15 @@
+body { background-color: #f0f2f5; font-family: sans-serif; margin: 0; }
+.container { max-width: 800px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+h1 { text-align: center; color: #1c1e21; }
+.url-input-container { display: flex; gap: 10px; margin-bottom: 20px; }
+.url-input-container input { flex-grow: 1; padding: 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 6px; }
+.url-input-container button { padding: 10px 15px; border: none; background-color: #1877f2; color: white; border-radius: 6px; cursor: pointer; font-weight: 600; }
+.loader { border: 5px solid #f3f3f3; border-top: 5px solid #1877f2; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 30px auto; }
+.error { color: #fa383e; text-align: center; font-weight: 500; }
+.transcript-container { max-height: 60vh; overflow-y: auto; border: 1px solid #ddd; border-radius: 6px; padding: 10px; }
+.segment { display: flex; align-items: flex-start; gap: 15px; padding: 8px; border-bottom: 1px solid #eee; }
+.segment:last-child { border-bottom: none; }
+.timestamp { font-weight: 600; color: #1877f2; text-decoration: none; font-size: 14px; min-width: 60px; }
+.text { flex-grow: 1; margin: 0; line-height: 1.5; font-size: 15px; }
+.copy-btn { padding: 4px 8px; font-size: 12px; background-color: #e9ebee; border: 1px solid #dcdfe3; border-radius: 4px; cursor: pointer; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
