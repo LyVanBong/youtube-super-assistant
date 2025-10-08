@@ -1,52 +1,39 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import DualRangeSlider from '../../shared/ui/DualRangeSlider';
+import { fetchLanguages } from '../../shared/lib/languageUtils';
 import './style.css';
 
-// Define the type for our settings
+// --- Type Definitions ---
 interface SettingsData {
-  isAutoCommentEnabled?: boolean;
-  autoPercentageMin?: number;
-  autoPercentageMax?: number;
-  isAutoLikeEnabled?: boolean;
-  autoLikePercentageMin?: number;
-  autoLikePercentageMax?: number;
-  aiLanguage?: string;
-  customPrompt?: string;
-  aiApiKey?: string;
-  accessToken?: string;
+  isAutoCommentEnabled?: boolean; autoPercentageMin?: number; autoPercentageMax?: number;
+  isAutoLikeEnabled?: boolean; autoLikePercentageMin?: number; autoLikePercentageMax?: number;
+  aiLanguage?: string; customPrompt?: string; aiApiKey?: string; accessToken?: string;
 }
 
+// --- Main Component ---
 const Settings = () => {
   const [settings, setSettings] = useState<SettingsData>({});
   const [status, setStatus] = useState('');
+  const [apiKeyVisible, setApiKeyVisible] = useState(false);
+  const [tokenVisible, setTokenVisible] = useState(false);
+  const [languages, setLanguages] = useState<string[]>(['English', 'Vietnamese']);
 
   const loadSettings = useCallback(() => {
-    chrome.storage.sync.get(
-      [
-        'isAutoCommentEnabled', 'autoPercentageMin', 'autoPercentageMax',
-        'isAutoLikeEnabled', 'autoLikePercentageMin', 'autoLikePercentageMax',
-        'aiLanguage', 'customPrompt', 'aiApiKey', 'accessToken'
-      ],
-      (data: SettingsData) => {
-        setSettings(data);
-      }
-    );
+    const defaults = {
+        isAutoCommentEnabled: false, autoPercentageMin: 30, autoPercentageMax: 80,
+        isAutoLikeEnabled: true, autoLikePercentageMin: 50, autoLikePercentageMax: 80,
+        aiLanguage: 'English', customPrompt: '', aiApiKey: '', accessToken: ''
+    };
+    chrome.storage.sync.get(defaults, (data: SettingsData) => setSettings(data));
   }, []);
 
-  useEffect(() => {
+  useEffect(() => { 
     loadSettings();
+    fetchLanguages().then(setLanguages);
   }, [loadSettings]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    let finalValue: string | boolean | number = value;
-
-    if (type === 'checkbox') {
-      finalValue = (e.target as HTMLInputElement).checked;
-    } else if (type === 'range' || type === 'number') {
-      finalValue = Number(value);
-    }
-
-    setSettings(prev => ({ ...prev, [name]: finalValue }));
+  const handleSettingChange = (key: string, value: any) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
   };
 
   const saveSettings = () => {
@@ -58,74 +45,96 @@ const Settings = () => {
 
   return (
     <div className="page-container settings-page">
-      <header className="page-header">
-        <h1>Cài đặt</h1>
-        <p>Tùy chỉnh các tính năng và hành vi của tiện ích.</p>
-      </header>
+      <header className="page-header"><h1>Cài đặt</h1></header>
 
       <div className="settings-content">
         <div className="card">
           <h2 className="card-title">Tự động hóa</h2>
-          
-          <div className="setting-row">
-            <div className="setting-info">
-              <label htmlFor="auto-like-toggle">Tự động Thích</label>
-              <p className="description">Tự động thích video khi bạn xem đến một ngưỡng nhất định.</p>
+          <div className="setting-item">
+            <div>
+              <label htmlFor="auto-like-toggle">Bật tự động thích video</label>
+              <p className="description">Tự động thích video khi bạn xem.</p>
             </div>
-            <label className="switch">
-              <input id="auto-like-toggle" type="checkbox" name="isAutoLikeEnabled" checked={settings.isAutoLikeEnabled ?? false} onChange={handleInputChange} />
-              <span className="slider"></span>
-            </label>
+            <label className="switch"><input id="auto-like-toggle" type="checkbox" name="isAutoLikeEnabled" checked={settings.isAutoLikeEnabled ?? false} onChange={(e) => handleSettingChange('isAutoLikeEnabled', e.target.checked)} /><span className="slider"></span></label>
           </div>
-
-          <div className="setting-row">
-            <div className="setting-info">
-              <label>Ngưỡng kích hoạt Thích</label>
-              <p className="description">Kích hoạt ngẫu nhiên trong khoảng từ {settings.autoLikePercentageMin || 0}% đến {settings.autoLikePercentageMax || 0}% thời lượng video.</p>
+          <div className="setting-item">
+            <div>
+              <label>Ngưỡng kích hoạt tự động thích</label>
+              <p className="description">Kích hoạt ngẫu nhiên trong khoảng {settings.autoLikePercentageMin}% - {settings.autoLikePercentageMax}%.</p>
             </div>
-            <div className="range-group">
-              <input type="range" name="autoLikePercentageMin" value={settings.autoLikePercentageMin || 0} onChange={handleInputChange} />
-              <input type="range" name="autoLikePercentageMax" value={settings.autoLikePercentageMax || 0} onChange={handleInputChange} />
+            <div className="range-container">
+                <DualRangeSlider 
+                    min={0} max={100}
+                    minValue={settings.autoLikePercentageMin || 0}
+                    maxValue={settings.autoLikePercentageMax || 100}
+                    onMinChange={(val) => handleSettingChange('autoLikePercentageMin', val)}
+                    onMaxChange={(val) => handleSettingChange('autoLikePercentageMax', val)}
+                />
             </div>
           </div>
-
           <hr className="divider" />
-
-          <div className="setting-row">
-            <div className="setting-info">
-              <label htmlFor="auto-comment-toggle">Tự động Bình luận</label>
-              <p className="description">Tự động bình luận khi bạn xem đến một ngưỡng nhất định.</p>
+          <div className="setting-item">
+            <div>
+              <label htmlFor="auto-comment-toggle">Bật tự động bình luận</label>
+              <p className="description">Tự động bình luận khi xem gần hết video.</p>
             </div>
-            <label className="switch">
-              <input id="auto-comment-toggle" type="checkbox" name="isAutoCommentEnabled" checked={settings.isAutoCommentEnabled ?? false} onChange={handleInputChange} />
-              <span className="slider"></span>
-            </label>
+            <label className="switch"><input id="auto-comment-toggle" type="checkbox" name="isAutoCommentEnabled" checked={settings.isAutoCommentEnabled ?? false} onChange={(e) => handleSettingChange('isAutoCommentEnabled', e.target.checked)} /><span className="slider"></span></label>
           </div>
-
-          <div className="setting-row">
-            <div className="setting-info">
-              <label>Ngưỡng kích hoạt Bình luận</label>
-              <p className="description">Kích hoạt ngẫu nhiên trong khoảng từ {settings.autoPercentageMin || 0}% đến {settings.autoPercentageMax || 0}% thời lượng video.</p>
+           <div className="setting-item">
+            <div>
+              <label>Ngưỡng kích hoạt tự động bình luận</label>
+              <p className="description">Kích hoạt ngẫu nhiên trong khoảng {settings.autoPercentageMin}% - {settings.autoPercentageMax}%.</p>
             </div>
-            <div className="range-group">
-              <input type="range" name="autoPercentageMin" value={settings.autoPercentageMin || 0} onChange={handleInputChange} />
-              <input type="range" name="autoPercentageMax" value={settings.autoPercentageMax || 0} onChange={handleInputChange} />
+            <div className="range-container">
+                 <DualRangeSlider 
+                    min={0} max={100}
+                    minValue={settings.autoPercentageMin || 0}
+                    maxValue={settings.autoPercentageMax || 100}
+                    onMinChange={(val) => handleSettingChange('autoPercentageMin', val)}
+                    onMaxChange={(val) => handleSettingChange('autoPercentageMax', val)}
+                />
             </div>
           </div>
         </div>
 
         <div className="card">
-          <h2 className="card-title">Cấu hình AI</h2>
+          <h2 className="card-title">Cài đặt AI</h2>
           <div className="form-group">
-            <label htmlFor="ai-language">Ngôn ngữ phản hồi</label>
-            <select id="ai-language" name="aiLanguage" value={settings.aiLanguage || 'English'} onChange={handleInputChange}>
-              <option value="English">Tiếng Anh</option>
-              <option value="Vietnamese">Tiếng Việt</option>
+            <label htmlFor="ai-language">Ngôn ngữ bình luận</label>
+            <select id="ai-language" name="aiLanguage" value={settings.aiLanguage || 'English'} onChange={(e) => handleSettingChange('aiLanguage', e.target.value)}>
+              {languages.map(lang => <option key={lang} value={lang}>{lang}</option>)}
             </select>
           </div>
           <div className="form-group">
-            <label htmlFor="custom-prompt">Prompt tùy chỉnh</label>
-            <textarea id="custom-prompt" name="customPrompt" value={settings.customPrompt || ''} onChange={handleInputChange} rows={4} placeholder="Ví dụ: Hãy viết bình luận thật hài hước..."></textarea>
+            <label htmlFor="custom-prompt">Prompt tùy chỉnh (nâng cao)</label>
+            <div className="description" style={{ marginBottom: '10px' }}>
+                Thêm chỉ dẫn riêng cho AI. Các biến có thể dùng:
+                <ul>
+                    <li><b>{`{videoTitle}`}</b> - Tiêu đề video.</li>
+                    <li><b>{`{videoDescription}`}</b> - Mô tả video.</li>
+                    <li><b>{`{videoTags}`}</b> - Thẻ tag của video.</li>
+                    <li><b>{`{videoTranscript}`}</b> - Lời thoại video.</li>
+                </ul>
+            </div>
+            <textarea id="custom-prompt" name="customPrompt" value={settings.customPrompt || ''} onChange={(e) => handleSettingChange('customPrompt', e.target.value)} rows={5} placeholder="Ví dụ: Dựa trên lời thoại '{videoTranscript}', hãy tóm tắt ý chính trong 1 câu."></textarea>
+          </div>
+        </div>
+
+        <div className="card">
+          <h2 className="card-title">Xác thực & API</h2>
+          <div className="form-group">
+            <label htmlFor="ai-api-key">AI API Key</label>
+            <div className="input-with-icon">
+              <input type={apiKeyVisible ? 'text' : 'password'} id="ai-api-key" name="aiApiKey" value={settings.aiApiKey || ''} onChange={(e) => handleSettingChange('aiApiKey', e.target.value)} />
+              <button onClick={() => setApiKeyVisible(!apiKeyVisible)}>👁️</button>
+            </div>
+          </div>
+          <div className="form-group">
+            <label htmlFor="access-token">Access Token</label>
+            <div className="input-with-icon">
+              <input type={tokenVisible ? 'text' : 'password'} id="access-token" name="accessToken" value={settings.accessToken || ''} onChange={(e) => handleSettingChange('accessToken', e.target.value)} />
+              <button onClick={() => setTokenVisible(!tokenVisible)}>👁️</button>
+            </div>
           </div>
         </div>
       </div>
