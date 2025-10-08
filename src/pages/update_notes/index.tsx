@@ -6,9 +6,8 @@ const UpdateNotes = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Using chrome.storage.local as session is non-persistent and might be cleared.
-    // Assuming notes are stored in local storage for persistence across browser restarts.
-    chrome.storage.local.get('updateNotes', (result) => {
+    // Notes are stored in session storage by the versioning service.
+    chrome.storage.session.get('updateNotes', (result) => {
       if (result.updateNotes) {
         setNotes(result.updateNotes);
       } else {

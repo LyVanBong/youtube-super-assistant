@@ -11,9 +11,11 @@ const Layout: React.FC<LayoutProps> = ({ activeView, onNavigate, children }) => 
   const [showUpdateNotes, setShowUpdateNotes] = useState(false);
 
   useEffect(() => {
-    // Check for the new_version flag to determine if the update notes should be shown
-    chrome.storage.local.get('new_version', (result) => {
-      if (result.new_version === true) {
+    // The versioning service stores the result in the `newVersionInfo` object.
+    chrome.storage.local.get('newVersionInfo', (result) => {
+      console.log(`[Super Assistant] Checking for newVersionInfo:`, result);
+      // Check if the newVersionInfo object exists and its new_version property is true.
+      if (result.newVersionInfo && (result.newVersionInfo.new_version === true || result.newVersionInfo.new_version === 'true')) {
         setShowUpdateNotes(true);
       }
     });
