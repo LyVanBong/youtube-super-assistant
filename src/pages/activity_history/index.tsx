@@ -29,7 +29,7 @@ const HistoryTable = ({ items, type }: { items: HistoryItem[], type: HistoryType
           <tr>
             <th>Video</th>
             {type !== 'likeHistory' && <th>Nội dung</th>}
-            {type === 'commentHistory' && <th>Thời điểm</th>}
+            {type === 'commentHistory' && <th>Thời điểm Video</th>}
             <th>Ngày thực hiện</th>
           </tr>
         </thead>
@@ -39,7 +39,7 @@ const HistoryTable = ({ items, type }: { items: HistoryItem[], type: HistoryType
               <td>
                 <a href={item.videoUrl} target="_blank" rel="noreferrer" className="video-cell">
                   <img src={`https://i.ytimg.com/vi/${getVideoId(item.videoUrl)}/mqdefault.jpg`} alt="thumbnail" className="thumbnail"/>
-                  <span>{item.title || new URL(item.videoUrl).pathname}</span>
+                  <span className="video-title">{item.title || new URL(item.videoUrl).pathname}</span>
                 </a>
               </td>
               {type !== 'likeHistory' && <td><div className="content-cell">{item.commentContent || item.summaryContent}</div></td>}
@@ -60,10 +60,13 @@ const ActivityHistory = () => {
   const [history, setHistory] = useState<{ [key in HistoryType]?: HistoryItem[] }>({});
   const [filteredHistory, setFilteredHistory] = useState<HistoryItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const loadHistory = useCallback(() => {
+    setIsLoading(true);
     chrome.storage.local.get(['commentHistory', 'summaryHistory', 'likeHistory', 'transcriptHistory'], (result) => {
       setHistory(result as any);
+      setIsLoading(false);
     });
   }, []);
 
@@ -95,32 +98,31 @@ const ActivityHistory = () => {
   };
 
   return (
-    <div className="history-page">
+    <div className="page-container history-page">
       <header className="page-header">
-        <h1>Lịch sử hoạt động</h1>
-        <p>Xem lại các hoạt động đã được thực hiện bởi tiện ích.</p>
-      </header>
-
-      <div className="card">
-        <div className="toolbar">
-          <div className="tabs">
-            <button onClick={() => setActiveTab('commentHistory')} className={activeTab === 'commentHistory' ? 'active' : ''}>Bình luận</button>
-            <button onClick={() => setActiveTab('summaryHistory')} className={activeTab === 'summaryHistory' ? 'active' : ''}>Tóm tắt</button>
-            <button onClick={() => setActiveTab('likeHistory')} className={activeTab === 'likeHistory' ? 'active' : ''}>Thích</button>
-            <button onClick={() => setActiveTab('transcriptHistory')} className={activeTab === 'transcriptHistory' ? 'active' : ''}>Bản ghi</button>
-          </div>
-          <div className="actions">
-            <input 
-              type="text" 
-              placeholder="Tìm kiếm..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <button onClick={loadHistory}>Làm mới</button>
-            <button onClick={clearHistory} className="danger">Xóa</button>
-          </div>
+        <h1>Trung tâm hoạt động</h1>
+        <div className="actions">
+          <input 
+            type="text" 
+            placeholder="Tìm kiếm trong tab hiện tại..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <button onClick={loadHistory}>Làm mới</button>
+          <button onClick={clearHistory} className="danger">Xóa Lịch sử Tab</button>
         </div>
-        <HistoryTable items={filteredHistory} type={activeTab} />
+      </header>
+      
+      <div className="card full-height-card">
+        <div className="tabs">
+          <button onClick={() => setActiveTab('commentHistory')} className={activeTab === 'commentHistory' ? 'active' : ''}>Lịch sử Bình luận</button>
+          <button onClick={() => setActiveTab('summaryHistory')} className={activeTab === 'summaryHistory' ? 'active' : ''}>Lịch sử Tóm tắt</button>
+          <button onClick={() => setActiveTab('likeHistory')} className={activeTab === 'likeHistory' ? 'active' : ''}>Lịch sử Thích</button>
+          <button onClick={() => setActiveTab('transcriptHistory')} className={activeTab === 'transcriptHistory' ? 'active' : ''}>Lịch sử Lời thoại</button>
+        </div>
+        <div className="content-area">
+          {isLoading ? <p>Đang tải...</p> : <HistoryTable items={filteredHistory} type={activeTab} />}
+        </div>
       </div>
     </div>
   );
