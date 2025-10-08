@@ -2,11 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Button, Badge, Stack, Placeholder } from 'react-bootstrap';
 import { BarChartSteps, ChatLeftText, HandThumbsUp, ClockHistory, Gear } from 'react-bootstrap-icons';
 
-// Define types for our data
+// --- Type Definitions ---
 interface Stats {
   summaries: number;
   comments: number;
   autoLikes: number;
+}
+
+interface HistoryItem {
+  videoUrl: string;
+  realTimestamp: string;
+  title?: string;
+  // Other properties from different history types can exist
 }
 
 interface Activity {
@@ -21,23 +28,68 @@ interface Settings {
   aiLanguage?: string;
 }
 
+// --- Helper Functions ---
+function timeAgo(dateString: string): string {
+  const date = new Date(dateString);
+  const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+
+  let interval = seconds / 31536000; // years
+  if (interval > 1) return Math.floor(interval) + " năm trước";
+
+  interval = seconds / 2592000; // months
+  if (interval > 1) return Math.floor(interval) + " tháng trước";
+
+  interval = seconds / 86400; // days
+  if (interval > 1) return Math.floor(interval) + " ngày trước";
+
+  interval = seconds / 3600; // hours
+  if (interval > 1) return Math.floor(interval) + " giờ trước";
+
+  interval = seconds / 60; // minutes
+  if (interval > 1) return Math.floor(interval) + " phút trước";
+
+  return Math.floor(seconds) + " giây trước";
+}
+
+
+// --- Main Component ---
 const Dashboard = () => {
   const [stats, setStats] = useState<Stats | null>(null);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [recentActivities, setRecentActivities] = useState<Activity[] | null>(null);
 
   useEffect(() => {
-    // Fetch data from chrome storage
-    chrome.storage.local.get(['stats', 'history'], (result) => {
+    // Fetch stats
+    chrome.storage.local.get('stats', (result) => {
       if (result.stats) {
         setStats(result.stats);
       }
-      if (result.history && Array.isArray(result.history)) {
-        // Assuming history is sorted newest first, take the top 4
-        setRecentActivities(result.history.slice(0, 4));
-      }
     });
 
+    // Fetch all history types and combine them
+    const historyKeys: (keyof Stats)[] = ['commentHistory', 'summaryHistory', 'likeHistory', 'transcriptHistory'];
+    chrome.storage.local.get(historyKeys, (result) => {
+      const allHistory: (HistoryItem & { type: string })[] = [];
+      
+      (result.commentHistory || []).forEach((item: HistoryItem) => allHistory.push({ ...item, type: 'Bình luận' }));
+      (result.summaryHistory || []).forEach((item: HistoryItem) => allHistory.push({ ...item, type: 'Tóm tắt' }));
+      (result.likeHistory || []).forEach((item: HistoryItem) => allHistory.push({ ...item, type: 'Thích' }));
+      (result.transcriptHistory || []).forEach((item: HistoryItem) => allHistory.push({ ...item, type: 'Lời thoại' }));
+
+      // Sort by date, most recent first
+      allHistory.sort((a, b) => new Date(b.realTimestamp).getTime() - new Date(a.realTimestamp).getTime());
+
+      // Format for display
+      const formattedActivities = allHistory.slice(0, 4).map(item => ({
+        action: item.type,
+        target: item.title || item.videoUrl,
+        time: timeAgo(item.realTimestamp)
+      }));
+
+      setRecentActivities(formattedActivities);
+    });
+
+    // Fetch settings
     chrome.storage.sync.get([
       'isAutoLikeEnabled',
       'isAutoCommentEnabled',
@@ -133,7 +185,7 @@ const Dashboard = () => {
                   {recentActivities.map((activity, index) => (
                     <Stack direction="horizontal" key={index}>
                       <div>
-                        <strong>{activity.action}</strong> {activity.target}
+                        <strong>{activity.action}:</strong> {activity.target}
                       </div>
                       <div className="text-muted ms-auto flex-shrink-0">{activity.time}</div>
                     </Stack>

@@ -4,9 +4,23 @@ interface HistoryData {
     commentContent?: string;
     summaryContent?: string;
     videoTimestamp?: string;
+    title?: string; // Add title to be stored with history
 }
 
-function saveToHistory(storageKey: 'commentHistory' | 'summaryHistory' | 'likeHistory', data: HistoryData): void {
+type StatKey = 'comments' | 'summaries' | 'likes' | 'transcripts';
+type StorageKey = 'commentHistory' | 'summaryHistory' | 'likeHistory' | 'transcriptHistory';
+
+function incrementStat(statKey: StatKey): void {
+    chrome.storage.local.get({ stats: { comments: 0, summaries: 0, likes: 0, transcripts: 0 } }, (result) => {
+        const newStats = result.stats;
+        if (newStats.hasOwnProperty(statKey)) {
+            newStats[statKey]++;
+        }
+        chrome.storage.local.set({ stats: newStats });
+    });
+}
+
+function saveToHistory(storageKey: StorageKey, data: HistoryData): void {
     chrome.storage.local.get({ [storageKey]: [] }, (result) => {
         const history = result[storageKey];
         history.unshift(data);
@@ -15,6 +29,15 @@ function saveToHistory(storageKey: 'commentHistory' | 'summaryHistory' | 'likeHi
         }
         chrome.storage.local.set({ [storageKey]: history });
     });
+
+    // Increment stats based on the history type
+    const statMap: Record<StorageKey, StatKey> = {
+        commentHistory: 'comments',
+        summaryHistory: 'summaries',
+        likeHistory: 'likes',
+        transcriptHistory: 'transcripts'
+    };
+    incrementStat(statMap[storageKey]);
 }
 
 export function saveCommentToHistory(data: HistoryData): void {
@@ -27,6 +50,10 @@ export function saveSummaryToHistory(data: HistoryData): void {
 
 export function saveLikeToHistory(data: HistoryData): void {
     saveToHistory('likeHistory', data);
+}
+
+export function saveTranscriptToHistory(data: HistoryData): void {
+    saveToHistory('transcriptHistory', data);
 }
 
 export function isVideoInCommentHistory(videoId: string, commentHistory: HistoryData[]): boolean {
