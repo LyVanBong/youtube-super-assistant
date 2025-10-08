@@ -13,8 +13,9 @@ import {
   Stack,
   Alert,
   Row,
-  Col
+  Col,
 } from 'react-bootstrap';
+import { ClockHistory, FileText, Gear, InfoCircle, Grid3x3GapFill } from 'react-bootstrap-icons';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 // --- Helper Types and Functions ---
@@ -88,12 +89,41 @@ const Popup = () => {
     chrome.tabs.create({ url: chrome.runtime.getURL(url) });
   };
 
+  const renderFeatureGrid = () => {
+    const features = [
+      { id: 'activity_history', name: 'Lịch sử', icon: <ClockHistory size={24} /> },
+      { id: 'transcript', name: 'Bản ghi', icon: <FileText size={24} /> },
+      { id: 'settings', name: 'Cài đặt', icon: <Gear size={24} /> },
+      { id: 'about', name: 'Giới thiệu', icon: <InfoCircle size={24} /> },
+    ];
+
+    return (
+      <Card>
+        <Card.Body>
+          <Card.Title as="h5" className="d-flex align-items-center"><Grid3x3GapFill className="me-2" /> Tính năng khác</Card.Title>
+          <Row className="text-center mt-3">
+            {features.map(feature => (
+              <Col key={feature.id} xs={6} className="mb-3">
+                <Button variant="light" className="w-100 h-100 p-2" onClick={() => handleNavigation(feature.id)}>
+                  <Stack gap={2} className="align-items-center">
+                    {feature.icon}
+                    <span style={{ fontSize: '0.8rem' }}>{feature.name}</span>
+                  </Stack>
+                </Button>
+              </Col>
+            ))}
+          </Row>
+        </Card.Body>
+      </Card>
+    );
+  }
+
   const renderDashboard = () => (
     <Stack gap={3}>
       {error && <Alert variant="danger">{error}</Alert>}
-      
+
       {currentTab && videoDetails ? (
-        <Card>
+        <Card bg="dark" text="white">
           <Card.Body>
             <Card.Title as="h6">{videoDetails.snippet?.channelTitle}</Card.Title>
             <Card.Text style={{ fontSize: '0.85rem' }}>
@@ -102,7 +132,7 @@ const Popup = () => {
           </Card.Body>
         </Card>
       ) : (
-        <Alert variant="info">Navigate to a YouTube video page to enable AI features.</Alert>
+        <Alert variant="primary">Di chuyển đến trang video YouTube để kích hoạt các tính năng AI.</Alert>
       )}
 
       <Card>
@@ -110,49 +140,23 @@ const Popup = () => {
           <Card.Title as="h5">Trung tâm AI</Card.Title>
           <ButtonGroup className="w-100">
             <Button variant="primary" onClick={() => handleAiAction('comment')} disabled={!currentTab}>Tạo Bình Luận</Button>
-            <Button variant="secondary" onClick={() => handleAiAction('summary')} disabled={!currentTab}>Tóm Tắt Video</Button>
+            <Button variant="info" onClick={() => handleAiAction('summary')} disabled={!currentTab}>Tóm Tắt Video</Button>
           </ButtonGroup>
         </Card.Body>
       </Card>
 
-      <Card>
-        <Card.Body>
-          <Card.Title as="h5">Tính năng</Card.Title>
-           <Nav variant="pills" className="flex-column">
-              <Nav.Link onClick={() => handleNavigation('activity_history')}>Lịch sử hoạt động</Nav.Link>
-              <Nav.Link onClick={() => handleNavigation('transcript')}>Bản ghi video</Nav.Link>
-              <Nav.Link onClick={() => handleNavigation('settings')}>Cài đặt chi tiết</Nav.Link>
-              <Nav.Link onClick={() => handleNavigation('about')}>Giới thiệu</Nav.Link>
-            </Nav>
-        </Card.Body>
-      </Card>
+      {renderFeatureGrid()}
 
       <Card>
         <Card.Body>
           <Card.Title as="h5">Cài đặt nhanh</Card.Title>
           <Form>
-            <Form.Check
-              type="switch"
-              id="auto-like-switch"
-              label="Tự động thích"
-              checked={settings.isAutoLikeEnabled ?? false}
-              onChange={e => handleSettingChange('isAutoLikeEnabled', e.target.checked)}
-            />
-            <Form.Check
-              type="switch"
-              id="auto-comment-switch"
-              label="Tự động bình luận"
-              checked={settings.isAutoCommentEnabled ?? false}
-              onChange={e => handleSettingChange('isAutoCommentEnabled', e.target.checked)}
-            />
+            <Form.Check type="switch" id="auto-like-switch" label="Tự động thích" checked={settings.isAutoLikeEnabled ?? false} onChange={e => handleSettingChange('isAutoLikeEnabled', e.target.checked)} />
+            <Form.Check type="switch" id="auto-comment-switch" label="Tự động bình luận" checked={settings.isAutoCommentEnabled ?? false} onChange={e => handleSettingChange('isAutoCommentEnabled', e.target.checked)} />
             <Form.Group as={Row} className="mt-2 align-items-center">
-              <Form.Label column sm="4">Ngôn ngữ AI</Form.Label>
-              <Col sm="8">
-                <Form.Select
-                  size="sm"
-                  value={settings.aiLanguage || 'English'}
-                  onChange={e => handleSettingChange('aiLanguage', e.target.value)}
-                >
+              <Form.Label column sm={5}>Ngôn ngữ AI</Form.Label>
+              <Col sm={7}>
+                <Form.Select size="sm" value={settings.aiLanguage || 'English'} onChange={e => handleSettingChange('aiLanguage', e.target.value)}>
                   {languages.map(lang => <option key={lang} value={lang}>{lang}</option>)}
                 </Form.Select>
               </Col>
@@ -168,13 +172,7 @@ const Popup = () => {
       <Card.Body>
         {aiResult ? (
           <Stack gap={3}>
-            <Form.Control
-              as="textarea"
-              rows={8}
-              value={aiResult}
-              readOnly
-              style={{ fontSize: '0.9rem' }}
-            />
+            <Form.Control as="textarea" rows={10} value={aiResult} readOnly style={{ fontSize: '0.9rem' }} />
             <ButtonGroup>
               <Button variant="success" onClick={() => navigator.clipboard.writeText(aiResult)}>Sao chép</Button>
               <Button variant="info" onClick={() => lastAction && handleAiAction(lastAction)}>Tạo lại</Button>
@@ -182,11 +180,11 @@ const Popup = () => {
             </ButtonGroup>
           </Stack>
         ) : (
-          <Stack className="align-items-center text-center" gap={2}>
-            <Spinner animation="border" role="status">
+          <Stack className="align-items-center text-center" gap={2} style={{ padding: '3rem 0' }}>
+            <Spinner animation="border" role="status" style={{ width: '3rem', height: '3rem' }}>
               <span className="visually-hidden">Loading...</span>
             </Spinner>
-            <p className="mb-0">Đang xử lý...</p>
+            <p className="mb-0 mt-2">Đang xử lý...</p>
           </Stack>
         )}
       </Card.Body>
@@ -194,10 +192,10 @@ const Popup = () => {
   );
 
   return (
-    <Container style={{ width: '350px' }} className="py-3">
-      <Stack gap={3} className="align-items-center mb-3">
-        <Image src="../icons/icon48.png" roundedCircle />
-        <h4 className="mb-0">Super Assistant</h4>
+    <Container style={{ width: '380px' }} className="py-3">
+      <Stack direction="horizontal" gap={2} className="align-items-center mb-3">
+        <Image src="../icons/icon48.png" width={30} height={30} />
+        <h5 className="mb-0 fw-bold">Super Assistant</h5>
       </Stack>
       {view === 'dashboard' ? renderDashboard() : renderProcessing()}
     </Container>
