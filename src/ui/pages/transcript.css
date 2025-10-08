@@ -1,4 +1,3 @@
-body { background-color: #f0f2f5; font-family: sans-serif; margin: 0; }
 .container { max-width: 800px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
 h1 { text-align: center; color: #1c1e21; }
 .url-input-container { display: flex; gap: 10px; margin-bottom: 20px; }
