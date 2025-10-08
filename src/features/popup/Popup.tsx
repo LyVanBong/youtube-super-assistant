@@ -1,7 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { fetchLanguages } from '../../shared/lib/languageUtils';
-import './popup.css';
+import {
+  Container,
+  Card,
+  Button,
+  ButtonGroup,
+  Spinner,
+  Form,
+  Nav,
+  Image,
+  Stack,
+  Alert,
+  Row,
+  Col
+} from 'react-bootstrap';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 // --- Helper Types and Functions ---
 type View = 'dashboard' | 'processing';
@@ -26,24 +40,22 @@ const Popup = () => {
   const [videoDetails, setVideoDetails] = useState<any>(null);
   const [settings, setSettings] = useState<any>({});
   const [languages, setLanguages] = useState<string[]>(['English', 'Vietnamese']);
+  const [error, setError] = useState<string | null>(null);
 
   // Load initial data
   useEffect(() => {
-    // Fetch dynamic languages
     fetchLanguages().then(setLanguages);
 
-    // Get current tab info
     chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
       const tab = tabs[0];
       if (tab && tab.url && tab.url.includes("youtube.com/watch")) {
         setCurrentTab(tab);
         sendMessage({ action: 'getVideoInfo', url: tab.url })
           .then(res => setVideoDetails(res.details))
-          .catch(console.error);
+          .catch(err => setError('Could not fetch video details.'));
       }
     });
 
-    // Get settings
     chrome.storage.sync.get(null, items => setSettings(items));
   }, []);
 
@@ -51,21 +63,22 @@ const Popup = () => {
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
     chrome.storage.sync.set({ [key]: value });
-  }
+  };
 
   const handleAiAction = async (action: AiAction) => {
     if (!currentTab?.id || !currentTab.url) return;
     setLastAction(action);
     setAiResult('');
+    setError(null);
     setView('processing');
     try {
-      const response = await sendMessage({ 
+      const response = await sendMessage({
         action: action === 'comment' ? 'createComment' : 'summarizeVideo',
-        url: currentTab.url 
+        url: currentTab.url
       });
       setAiResult(response.content);
-    } catch (error: any) { 
-      alert(`Lỗi: ${error.message}`);
+    } catch (error: any) {
+      setError(`Lỗi: ${error.message}`);
       setView('dashboard');
     }
   };
@@ -76,76 +89,118 @@ const Popup = () => {
   };
 
   const renderDashboard = () => (
-    <>
-      {currentTab && videoDetails && (
-        <div className="card">
-          <p><b>{videoDetails.snippet?.channelTitle}</b></p>
-          <p>{videoDetails.snippet?.title}</p>
-        </div>
+    <Stack gap={3}>
+      {error && <Alert variant="danger">{error}</Alert>}
+      
+      {currentTab && videoDetails ? (
+        <Card>
+          <Card.Body>
+            <Card.Title as="h6">{videoDetails.snippet?.channelTitle}</Card.Title>
+            <Card.Text style={{ fontSize: '0.85rem' }}>
+              {videoDetails.snippet?.title}
+            </Card.Text>
+          </Card.Body>
+        </Card>
+      ) : (
+        <Alert variant="info">Navigate to a YouTube video page to enable AI features.</Alert>
       )}
-      <div className="card">
-        <h4>Trung tâm AI</h4>
-        <div className="hero-actions">
-          <button onClick={() => handleAiAction('comment')} disabled={!currentTab}>Tạo Bình Luận</button>
-          <button onClick={() => handleAiAction('summary')} disabled={!currentTab}>Tóm Tắt Video</button>
-        </div>
-      </div>
-      <div className="card">
-        <h4>Tính năng</h4>
-        <div className="action-grid">
-          <button onClick={() => handleNavigation('activity_history')}>Lịch sử</button>
-          <button onClick={() => handleNavigation('transcript')}>Bản ghi</button>
-          <button onClick={() => handleNavigation('settings')}>Cài đặt</button>
-          <button onClick={() => handleNavigation('about')}>Giới thiệu</button>
-        </div>
-      </div>
-      <div className="card">
-        <h4>Cài đặt nhanh</h4>
-        <div className="setting-row">
-          <label>Tự động thích</label>
-          <input type="checkbox" checked={settings.isAutoLikeEnabled ?? false} onChange={e => handleSettingChange('isAutoLikeEnabled', e.target.checked)} />
-        </div>
-        <div className="setting-row">
-          <label>Tự động bình luận</label>
-          <input type="checkbox" checked={settings.isAutoCommentEnabled ?? false} onChange={e => handleSettingChange('isAutoCommentEnabled', e.target.checked)} />
-        </div>
-        <div className="setting-row">
-          <label>Ngôn ngữ AI</label>
-          <select value={settings.aiLanguage || 'English'} onChange={e => handleSettingChange('aiLanguage', e.target.value)}>
-            {languages.map(lang => <option key={lang} value={lang}>{lang}</option>)}
-          </select>
-        </div>
-      </div>
-    </>
+
+      <Card>
+        <Card.Body>
+          <Card.Title as="h5">Trung tâm AI</Card.Title>
+          <ButtonGroup className="w-100">
+            <Button variant="primary" onClick={() => handleAiAction('comment')} disabled={!currentTab}>Tạo Bình Luận</Button>
+            <Button variant="secondary" onClick={() => handleAiAction('summary')} disabled={!currentTab}>Tóm Tắt Video</Button>
+          </ButtonGroup>
+        </Card.Body>
+      </Card>
+
+      <Card>
+        <Card.Body>
+          <Card.Title as="h5">Tính năng</Card.Title>
+           <Nav variant="pills" className="flex-column">
+              <Nav.Link onClick={() => handleNavigation('activity_history')}>Lịch sử hoạt động</Nav.Link>
+              <Nav.Link onClick={() => handleNavigation('transcript')}>Bản ghi video</Nav.Link>
+              <Nav.Link onClick={() => handleNavigation('settings')}>Cài đặt chi tiết</Nav.Link>
+              <Nav.Link onClick={() => handleNavigation('about')}>Giới thiệu</Nav.Link>
+            </Nav>
+        </Card.Body>
+      </Card>
+
+      <Card>
+        <Card.Body>
+          <Card.Title as="h5">Cài đặt nhanh</Card.Title>
+          <Form>
+            <Form.Check
+              type="switch"
+              id="auto-like-switch"
+              label="Tự động thích"
+              checked={settings.isAutoLikeEnabled ?? false}
+              onChange={e => handleSettingChange('isAutoLikeEnabled', e.target.checked)}
+            />
+            <Form.Check
+              type="switch"
+              id="auto-comment-switch"
+              label="Tự động bình luận"
+              checked={settings.isAutoCommentEnabled ?? false}
+              onChange={e => handleSettingChange('isAutoCommentEnabled', e.target.checked)}
+            />
+            <Form.Group as={Row} className="mt-2 align-items-center">
+              <Form.Label column sm="4">Ngôn ngữ AI</Form.Label>
+              <Col sm="8">
+                <Form.Select
+                  size="sm"
+                  value={settings.aiLanguage || 'English'}
+                  onChange={e => handleSettingChange('aiLanguage', e.target.value)}
+                >
+                  {languages.map(lang => <option key={lang} value={lang}>{lang}</option>)}
+                </Form.Select>
+              </Col>
+            </Form.Group>
+          </Form>
+        </Card.Body>
+      </Card>
+    </Stack>
   );
 
   const renderProcessing = () => (
-    <div className="card">
-      {aiResult ? (
-        <>
-          <textarea readOnly value={aiResult} rows={8}></textarea>
-          <div className="result-actions">
-            <button onClick={() => navigator.clipboard.writeText(aiResult)}>Sao chép</button>
-            <button onClick={() => lastAction && handleAiAction(lastAction)}>Tạo lại</button>
-            <button onClick={() => setView('dashboard')}>Quay lại</button>
-          </div>
-        </>
-      ) : (
-        <div className="spinner-container"><div className="spinner"></div><p>Đang xử lý...</p></div>
-      )}
-    </div>
+    <Card>
+      <Card.Body>
+        {aiResult ? (
+          <Stack gap={3}>
+            <Form.Control
+              as="textarea"
+              rows={8}
+              value={aiResult}
+              readOnly
+              style={{ fontSize: '0.9rem' }}
+            />
+            <ButtonGroup>
+              <Button variant="success" onClick={() => navigator.clipboard.writeText(aiResult)}>Sao chép</Button>
+              <Button variant="info" onClick={() => lastAction && handleAiAction(lastAction)}>Tạo lại</Button>
+              <Button variant="light" onClick={() => setView('dashboard')}>Quay lại</Button>
+            </ButtonGroup>
+          </Stack>
+        ) : (
+          <Stack className="align-items-center text-center" gap={2}>
+            <Spinner animation="border" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </Spinner>
+            <p className="mb-0">Đang xử lý...</p>
+          </Stack>
+        )}
+      </Card.Body>
+    </Card>
   );
 
   return (
-    <div className="container">
-      <div className="header">
-        <img src="../icons/icon48.png" alt="Logo" />
-        <h3>Super Assistant</h3>
-      </div>
-      <div className="main-content">
-        {view === 'dashboard' ? renderDashboard() : renderProcessing()}
-      </div>
-    </div>
+    <Container style={{ width: '350px' }} className="py-3">
+      <Stack gap={3} className="align-items-center mb-3">
+        <Image src="../icons/icon48.png" roundedCircle />
+        <h4 className="mb-0">Super Assistant</h4>
+      </Stack>
+      {view === 'dashboard' ? renderDashboard() : renderProcessing()}
+    </Container>
   );
 };
 

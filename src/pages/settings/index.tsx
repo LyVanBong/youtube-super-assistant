@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Stack, Card, Form, Button, Alert, Row, Col, InputGroup } from 'react-bootstrap';
 import DualRangeSlider from '../../shared/ui/DualRangeSlider';
 import { fetchLanguages } from '../../shared/lib/languageUtils';
-import './style.css';
 
 // --- Type Definitions ---
 interface SettingsData {
@@ -44,25 +44,26 @@ const Settings = () => {
   };
 
   return (
-    <div className="page-container settings-page">
-      <header className="page-header"><h1>Cài đặt</h1></header>
+    <Stack gap={4}>
+      <header><h1>Cài đặt</h1></header>
 
-      <div className="settings-content">
-        <div className="card">
-          <h2 className="card-title">Tự động hóa</h2>
-          <div className="setting-item">
-            <div>
-              <label htmlFor="auto-like-toggle">Bật tự động thích video</label>
-              <p className="description">Tự động thích video khi bạn xem.</p>
-            </div>
-            <label className="switch"><input id="auto-like-toggle" type="checkbox" name="isAutoLikeEnabled" checked={settings.isAutoLikeEnabled ?? false} onChange={(e) => handleSettingChange('isAutoLikeEnabled', e.target.checked)} /><span className="slider"></span></label>
-          </div>
-          <div className="setting-item">
-            <div>
-              <label>Ngưỡng kích hoạt tự động thích</label>
-              <p className="description">Kích hoạt ngẫu nhiên trong khoảng {settings.autoLikePercentageMin}% - {settings.autoLikePercentageMax}%.</p>
-            </div>
-            <div className="range-container">
+      <Card>
+        <Card.Header as="h5">Tự động hóa</Card.Header>
+        <Card.Body>
+          <Stack gap={4}>
+            <Form.Group as={Row} className="align-items-center">
+              <Col sm={8}>
+                <Form.Label>Bật tự động thích video</Form.Label>
+                <Form.Text muted>Tự động thích video khi bạn xem.</Form.Text>
+              </Col>
+              <Col sm={4} className="d-flex justify-content-end">
+                <Form.Check type="switch" id="auto-like-toggle" checked={settings.isAutoLikeEnabled ?? false} onChange={(e) => handleSettingChange('isAutoLikeEnabled', e.target.checked)} />
+              </Col>
+            </Form.Group>
+            
+            <Form.Group>
+                <Form.Label>Ngưỡng kích hoạt tự động thích</Form.Label>
+                <Form.Text muted>Kích hoạt ngẫu nhiên trong khoảng {settings.autoLikePercentageMin}% - {settings.autoLikePercentageMax}% thời lượng video.</Form.Text>
                 <DualRangeSlider 
                     min={0} max={100}
                     minValue={settings.autoLikePercentageMin || 0}
@@ -70,80 +71,83 @@ const Settings = () => {
                     onMinChange={(val) => handleSettingChange('autoLikePercentageMin', val)}
                     onMaxChange={(val) => handleSettingChange('autoLikePercentageMax', val)}
                 />
-            </div>
-          </div>
-          <hr className="divider" />
-          <div className="setting-item">
-            <div>
-              <label htmlFor="auto-comment-toggle">Bật tự động bình luận</label>
-              <p className="description">Tự động bình luận khi xem gần hết video.</p>
-            </div>
-            <label className="switch"><input id="auto-comment-toggle" type="checkbox" name="isAutoCommentEnabled" checked={settings.isAutoCommentEnabled ?? false} onChange={(e) => handleSettingChange('isAutoCommentEnabled', e.target.checked)} /><span className="slider"></span></label>
-          </div>
-           <div className="setting-item">
-            <div>
-              <label>Ngưỡng kích hoạt tự động bình luận</label>
-              <p className="description">Kích hoạt ngẫu nhiên trong khoảng {settings.autoPercentageMin}% - {settings.autoPercentageMax}%.</p>
-            </div>
-            <div className="range-container">
-                 <DualRangeSlider 
+            </Form.Group>
+
+            <hr />
+
+            <Form.Group as={Row} className="align-items-center">
+              <Col sm={8}>
+                <Form.Label>Bật tự động bình luận</Form.Label>
+                <Form.Text muted>Tự động bình luận khi xem gần hết video.</Form.Text>
+              </Col>
+              <Col sm={4} className="d-flex justify-content-end">
+                <Form.Check type="switch" id="auto-comment-toggle" checked={settings.isAutoCommentEnabled ?? false} onChange={(e) => handleSettingChange('isAutoCommentEnabled', e.target.checked)} />
+              </Col>
+            </Form.Group>
+
+            <Form.Group>
+                <Form.Label>Ngưỡng kích hoạt tự động bình luận</Form.Label>
+                <Form.Text muted>Kích hoạt ngẫu nhiên trong khoảng {settings.autoPercentageMin}% - {settings.autoPercentageMax}% thời lượng video.</Form.Text>
+                <DualRangeSlider 
                     min={0} max={100}
                     minValue={settings.autoPercentageMin || 0}
                     maxValue={settings.autoPercentageMax || 100}
                     onMinChange={(val) => handleSettingChange('autoPercentageMin', val)}
                     onMaxChange={(val) => handleSettingChange('autoPercentageMax', val)}
                 />
-            </div>
-          </div>
-        </div>
+            </Form.Group>
+          </Stack>
+        </Card.Body>
+      </Card>
 
-        <div className="card">
-          <h2 className="card-title">Cài đặt AI</h2>
-          <div className="form-group">
-            <label htmlFor="ai-language">Ngôn ngữ bình luận</label>
-            <select id="ai-language" name="aiLanguage" value={settings.aiLanguage || 'English'} onChange={(e) => handleSettingChange('aiLanguage', e.target.value)}>
-              {languages.map(lang => <option key={lang} value={lang}>{lang}</option>)}
-            </select>
-          </div>
-          <div className="form-group">
-            <label htmlFor="custom-prompt">Prompt tùy chỉnh (nâng cao)</label>
-            <div className="description" style={{ marginBottom: '10px' }}>
-                Thêm chỉ dẫn riêng cho AI. Các biến có thể dùng:
-                <ul>
-                    <li><b>{`{videoTitle}`}</b> - Tiêu đề video.</li>
-                    <li><b>{`{videoDescription}`}</b> - Mô tả video.</li>
-                    <li><b>{`{videoTags}`}</b> - Thẻ tag của video.</li>
-                    <li><b>{`{videoTranscript}`}</b> - Lời thoại video.</li>
-                </ul>
-            </div>
-            <textarea id="custom-prompt" name="customPrompt" value={settings.customPrompt || ''} onChange={(e) => handleSettingChange('customPrompt', e.target.value)} rows={5} placeholder="Ví dụ: Dựa trên lời thoại '{videoTranscript}', hãy tóm tắt ý chính trong 1 câu."></textarea>
-          </div>
-        </div>
+      <Card>
+        <Card.Header as="h5">Cài đặt AI</Card.Header>
+        <Card.Body>
+          <Stack gap={3}>
+            <Form.Group>
+              <Form.Label htmlFor="ai-language">Ngôn ngữ bình luận</Form.Label>
+              <Form.Select id="ai-language" value={settings.aiLanguage || 'English'} onChange={(e) => handleSettingChange('aiLanguage', e.target.value)}>
+                {languages.map(lang => <option key={lang} value={lang}>{lang}</option>)}
+              </Form.Select>
+            </Form.Group>
+            <Form.Group>
+              <Form.Label htmlFor="custom-prompt">Prompt tùy chỉnh (nâng cao)</Form.Label>
+              <Form.Text muted className="d-block mb-2">
+                  Thêm chỉ dẫn riêng cho AI. Các biến có thể dùng: <b>{`{videoTitle}`}, {`{videoDescription}`}, {`{videoTags}`}, {`{videoTranscript}`}</b>.
+              </Form.Text>
+              <Form.Control as="textarea" id="custom-prompt" value={settings.customPrompt || ''} onChange={(e) => handleSettingChange('customPrompt', e.target.value)} rows={5} placeholder="Ví dụ: Dựa trên lời thoại '{videoTranscript}', hãy tóm tắt ý chính trong 1 câu." />
+            </Form.Group>
+          </Stack>
+        </Card.Body>
+      </Card>
 
-        <div className="card">
-          <h2 className="card-title">Xác thực & API</h2>
-          <div className="form-group">
-            <label htmlFor="ai-api-key">AI API Key</label>
-            <div className="input-with-icon">
-              <input type={apiKeyVisible ? 'text' : 'password'} id="ai-api-key" name="aiApiKey" value={settings.aiApiKey || ''} onChange={(e) => handleSettingChange('aiApiKey', e.target.value)} />
-              <button onClick={() => setApiKeyVisible(!apiKeyVisible)}>👁️</button>
-            </div>
-          </div>
-          <div className="form-group">
-            <label htmlFor="access-token">Access Token</label>
-            <div className="input-with-icon">
-              <input type={tokenVisible ? 'text' : 'password'} id="access-token" name="accessToken" value={settings.accessToken || ''} onChange={(e) => handleSettingChange('accessToken', e.target.value)} />
-              <button onClick={() => setTokenVisible(!tokenVisible)}>👁️</button>
-            </div>
-          </div>
-        </div>
+      <Card>
+        <Card.Header as="h5">Xác thực & API</Card.Header>
+        <Card.Body>
+          <Stack gap={3}>
+            <Form.Group>
+              <Form.Label htmlFor="ai-api-key">AI API Key</Form.Label>
+              <InputGroup>
+                <Form.Control type={apiKeyVisible ? 'text' : 'password'} id="ai-api-key" value={settings.aiApiKey || ''} onChange={(e) => handleSettingChange('aiApiKey', e.target.value)} />
+                <Button variant="outline-secondary" onClick={() => setApiKeyVisible(!apiKeyVisible)}>{apiKeyVisible ? 'Ẩn' : 'Hiện'}</Button>
+              </InputGroup>
+            </Form.Group>
+            <Form.Group>
+              <Form.Label htmlFor="access-token">Access Token</Form.Label>
+              <InputGroup>
+                <Form.Control type={tokenVisible ? 'text' : 'password'} id="access-token" value={settings.accessToken || ''} onChange={(e) => handleSettingChange('accessToken', e.target.value)} />
+                <Button variant="outline-secondary" onClick={() => setTokenVisible(!tokenVisible)}>{tokenVisible ? 'Ẩn' : 'Hiện'}</Button>
+              </InputGroup>
+            </Form.Group>
+          </Stack>
+        </Card.Body>
+      </Card>
+
+      <div className="bg-light p-3 mt-4 rounded d-flex justify-content-end align-items-center position-sticky bottom-0">
+          {status && <Alert variant="success" className="me-3 mb-0 py-2 px-3">{status}</Alert>}
+          <Button onClick={saveSettings}>Lưu Cài đặt</Button>
       </div>
-
-      <footer className="page-footer-fixed">
-        {status && <span className="status-message">{status}</span>}
-        <button onClick={saveSettings} className="save-button">Lưu Cài đặt</button>
-      </footer>
-    </div>
+    </Stack>
   );
 };
 

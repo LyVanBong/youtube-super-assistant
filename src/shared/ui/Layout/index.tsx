@@ -1,14 +1,5 @@
 import React from 'react';
-import './style.css';
-
-// --- SVG Icons for navigation ---
-const icons: { [key: string]: React.ReactNode } = {
-  settings: <svg>...</svg>, // Replace with actual SVG paths
-  activity_history: <svg>...</svg>,
-  transcript: <svg>...</svg>,
-  update_notes: <svg>...</svg>,
-  about: <svg>...</svg>,
-};
+import { Container, Row, Col, Nav, Image, Stack } from 'react-bootstrap';
 
 interface LayoutProps {
   activeView: string;
@@ -26,29 +17,40 @@ const Layout: React.FC<LayoutProps> = ({ activeView, onNavigate, children }) => 
   ];
 
   return (
-    <div className="layout-container">
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <img src="../icons/icon48.png" alt="logo" />
-          <h2>Super Assistant</h2>
-        </div>
-        <nav className="sidebar-nav">
-          {navItems.map(item => (
-            <button 
-              key={item.id} 
-              className={`nav-item ${activeView === item.id ? 'active' : ''}`}
-              onClick={() => onNavigate(item.id)}
-            >
-              {/* We can add icons here later */}
-              <span>{item.name}</span>
-            </button>
-          ))}
-        </nav>
-      </aside>
-      <main className="main-content">
-        {children}
-      </main>
-    </div>
+    <Container fluid>
+      <Row className="vh-100">
+        {/* Sidebar */}
+        <Col 
+          as="aside" 
+          md={3} 
+          lg={2} 
+          className="bg-light border-end d-flex flex-column p-3"
+        >
+          <Stack gap={3} className="align-items-center mb-4">
+            <Image src="../icons/icon48.png" roundedCircle width={50} height={50} />
+            <h4 className="mb-0">Super Assistant</h4>
+          </Stack>
+          
+          <Nav 
+            variant="pills" 
+            className="flex-column" 
+            activeKey={activeView} 
+            onSelect={(selectedKey) => onNavigate(selectedKey || 'settings')}
+          >
+            {navItems.map(item => (
+              <Nav.Item key={item.id}>
+                <Nav.Link eventKey={item.id}>{item.name}</Nav.Link>
+              </Nav.Item>
+            ))}
+          </Nav>
+        </Col>
+
+        {/* Main Content */}
+        <Col as="main" md={9} lg={10} className="p-4 overflow-auto">
+          {children}
+        </Col>
+      </Row>
+    </Container>
   );
 };
 

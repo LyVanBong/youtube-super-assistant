@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import './style.css';
+import { Stack, Card, Button, Form, Spinner, Alert, Row, Col, InputGroup, Ratio, Badge } from 'react-bootstrap';
 
 // --- Type Definitions ---
 type Segment = { start: string; text: string };
@@ -8,17 +8,11 @@ type Segment = { start: string; text: string };
 const sendMessage = (message: any): Promise<any> => {
   return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage(message, response => {
-      if (chrome.runtime.lastError) {
-        return reject(new Error(chrome.runtime.lastError.message));
-      }
-      // Some handlers might not return a response, so we resolve without a value.
-      if (response === undefined) {
-        return resolve(undefined);
-      }
-      if (response.success) {
-        return resolve(response);
-      }
-      reject(new Error(response.error || 'An unknown error occurred.'));
+      if (chrome.runtime.lastError) return reject(new Error(chrome.runtime.lastError.message));
+      if (response?.success) return resolve(response);
+      // Handle cases where there's no response but also no error
+      if (response === undefined) return resolve(undefined);
+      reject(new Error(response?.error || 'An unknown error occurred.'));
     });
   });
 };
@@ -30,36 +24,50 @@ const InfoColumn = ({ details }: { details: any }) => {
   if (!details) return null;
   const { snippet = {}, statistics = {}, id } = details;
   return (
-    <div className="info-column">
-      <div className="card">
-        <div className="video-embed">
-          <iframe src={`https://www.youtube.com/embed/${id}`} title={snippet.title} frameBorder="0" allowFullScreen></iframe>
-        </div>
-        <h3 className="video-title">{snippet.title}</h3>
-        <a href={`https://www.youtube.com/channel/${snippet.channelId}`} target="_blank" rel="noreferrer">{snippet.channelTitle}</a>
-      </div>
-      <div className="card">
-        <h4>Thống kê</h4>
-        <div className="stats-grid">
-          <p><strong>Lượt xem:</strong> {Number(statistics.viewCount || 0).toLocaleString()}</p>
-          <p><strong>Lượt thích:</strong> {Number(statistics.likeCount || 0).toLocaleString()}</p>
-          <p><strong>Bình luận:</strong> {Number(statistics.commentCount || 0).toLocaleString()}</p>
-          <p><strong>Ngày đăng:</strong> {new Date(snippet.publishedAt).toLocaleDateString()}</p>
-        </div>
-      </div>
-      <div className="card">
-        <h4>Mô tả</h4>
-        <p className="description-text">{snippet.description}</p>
-      </div>
+    <Stack gap={3}>
+      <Card>
+        <Ratio aspectRatio="16x9">
+          <iframe src={`https://www.youtube.com/embed/${id}`} title={snippet.title} frameBorder="0" allowFullScreen />
+        </Ratio>
+        <Card.Body>
+          <Card.Title>{snippet.title}</Card.Title>
+          <Card.Subtitle className="mb-2 text-muted">
+            <a href={`https://www.youtube.com/channel/${snippet.channelId}`} target="_blank" rel="noreferrer" className="text-muted text-decoration-none">
+              {snippet.channelTitle}
+            </a>
+          </Card.Subtitle>
+        </Card.Body>
+      </Card>
+      <Card>
+        <Card.Header>Thống kê</Card.Header>
+        <Card.Body>
+          <Row>
+            <Col><strong>Lượt xem:</strong> {Number(statistics.viewCount || 0).toLocaleString()}</Col>
+            <Col><strong>Lượt thích:</strong> {Number(statistics.likeCount || 0).toLocaleString()}</Col>
+          </Row>
+          <Row>
+            <Col><strong>Bình luận:</strong> {Number(statistics.commentCount || 0).toLocaleString()}</Col>
+            <Col><strong>Ngày đăng:</strong> {new Date(snippet.publishedAt).toLocaleDateString()}</Col>
+          </Row>
+        </Card.Body>
+      </Card>
+      <Card>
+        <Card.Header>Mô tả</Card.Header>
+        <Card.Body style={{ whiteSpace: 'pre-wrap', maxHeight: '200px', overflowY: 'auto' }}>
+          {snippet.description}
+        </Card.Body>
+      </Card>
       {snippet.tags && (
-        <div className="card">
-          <h4>Tags</h4>
-          <div className="tags-container">
-            {snippet.tags.map((tag: string) => <span key={tag} className="tag">{tag}</span>)}
-          </div>
-        </div>
+        <Card>
+          <Card.Header>Tags</Card.Header>
+          <Card.Body>
+            <Stack direction="horizontal" gap={2} className="flex-wrap">
+              {snippet.tags.map((tag: string) => <Badge key={tag} pill bg="secondary">{tag}</Badge>)}
+            </Stack>
+          </Card.Body>
+        </Card>
       )}
-    </div>
+    </Stack>
   );
 };
 
@@ -86,29 +94,34 @@ const TranscriptColumn = ({ transcript, url }: { transcript: Segment[], url: str
   }, [transcript, searchTerm]);
 
   return (
-    <div className="transcript-column">
-      <div className="card full-height-card">
-        <div className="transcript-toolbar">
-          <input type="text" placeholder="Tìm trong lời thoại..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-          <button onClick={() => copyToClipboard(fullTranscriptText)}>Sao chép</button>
-        </div>
-        <div className="transcript-content">
-          {filteredTranscript.length > 0 ? (
-            filteredTranscript.map((seg, i) => (
-              <div key={i} className="segment">
-                <span className="timestamp">{seg.start}</span>
-                <p className="text">{seg.text}</p>
-              </div>
-            ))
-          ) : <p>Không có lời thoại.</p>}
-        </div>
-        <div className="summary-section">
-          <h4>Tóm tắt AI</h4>
-          <button onClick={handleSummarize} disabled={summary.isLoading}>{summary.isLoading ? 'Đang xử lý...' : 'Tạo tóm tắt'}</button>
-          {summary.text && <p className="summary-text">{summary.text}</p>}
-        </div>
-      </div>
-    </div>
+    <Card className="h-100">
+      <Card.Header>
+        <InputGroup>
+          <Form.Control placeholder="Tìm trong lời thoại..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          <Button variant="outline-secondary" onClick={() => copyToClipboard(fullTranscriptText)}>Sao chép</Button>
+        </InputGroup>
+      </Card.Header>
+      <Card.Body style={{ overflowY: 'auto' }}>
+        {filteredTranscript.length > 0 ? (
+          filteredTranscript.map((seg, i) => (
+            <div key={i} className="d-flex mb-2">
+              <small className="text-muted me-2">{seg.start}</small>
+              <p className="mb-0">{seg.text}</p>
+            </div>
+          ))
+        ) : <Alert variant="light">Không có lời thoại hoặc không tìm thấy kết quả.</Alert>}
+      </Card.Body>
+      <Card.Footer>
+        <Stack gap={2}>
+          <h5>Tóm tắt AI</h5>
+          <Button onClick={handleSummarize} disabled={summary.isLoading}>
+            {summary.isLoading && <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" />}
+            {summary.isLoading ? ' Đang xử lý...' : 'Tạo tóm tắt'}
+          </Button>
+          {summary.text && <Alert variant={summary.text.startsWith('Lỗi') ? 'danger' : 'info'}>{summary.text}</Alert>}
+        </Stack>
+      </Card.Footer>
+    </Card>
   );
 };
 
@@ -120,7 +133,10 @@ const TranscriptPage = () => {
   const [data, setData] = useState<{ details: any, transcript: Segment[] } | null>(null);
 
   const fetchVideoData = useCallback(async (url: string) => {
-    if (!url) return;
+    if (!url || !url.includes('youtube.com')) {
+      setError('Vui lòng nhập một URL video YouTube hợp lệ.');
+      return;
+    }
     setIsLoading(true); setError(''); setData(null);
     try {
       const [infoRes, transcriptRes] = await Promise.all([
@@ -130,7 +146,7 @@ const TranscriptPage = () => {
       if (!infoRes?.success) throw new Error(infoRes?.error || 'Failed to fetch video info');
       
       let segments: Segment[] = [];
-      if (transcriptRes?.success) {
+      if (transcriptRes?.success && transcriptRes.content) {
         segments = transcriptRes.content.split('\n').map((line: string) => {
             const parts = line.match(/\(?(\d{2}:\d{2})\)?\s*(.*)/) || ['', '00:00', line];
             return { start: parts[1], text: parts[2] };
@@ -152,23 +168,37 @@ const TranscriptPage = () => {
   }, [fetchVideoData]);
 
   return (
-    <div className="page-container transcript-page">
-      <header className="page-header">
-        <input type="text" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="Dán URL video YouTube..." />
-        <button onClick={() => fetchVideoData(videoUrl)} disabled={isLoading}>{isLoading ? 'Đang tải...' : 'Lấy thông tin'}</button>
+    <Stack gap={3} className="vh-100 p-3">
+      <header>
+        <InputGroup>
+          <Form.Control
+            value={videoUrl}
+            onChange={(e) => setVideoUrl(e.target.value)}
+            placeholder="Dán URL video YouTube..."
+            onKeyUp={(e) => e.key === 'Enter' && fetchVideoData(videoUrl)}
+          />
+          <Button onClick={() => fetchVideoData(videoUrl)} disabled={isLoading}>
+            {isLoading && <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" />}
+            {isLoading ? ' Đang tải...' : 'Lấy thông tin'}
+          </Button>
+        </InputGroup>
       </header>
-      <div className="main-area">
-        {isLoading && <div className="loader"></div>}
-        {error && <p className="error-message">Lỗi: {error}</p>}
-        {!isLoading && !data && !error && <p className="prompt-message">Dán một URL video để bắt đầu.</p>}
+      <main className="flex-grow-1" style={{ overflowY: 'hidden' }}>
+        {isLoading && <div className="text-center"><Spinner animation="border" /><p>Đang tải dữ liệu video...</p></div>}
+        {error && <Alert variant="danger">Lỗi: {error}</Alert>}
+        {!isLoading && !data && !error && <Alert variant="info">Dán một URL video vào ô trên và nhấn "Lấy thông tin" để bắt đầu.</Alert>}
         {data && (
-          <div className="content-grid">
-            <InfoColumn details={data.details} />
-            <TranscriptColumn transcript={data.transcript} url={videoUrl} />
-          </div>
+          <Row className="h-100">
+            <Col md={5} className="h-100" style={{ overflowY: 'auto' }}>
+              <InfoColumn details={data.details} />
+            </Col>
+            <Col md={7} className="h-100">
+              <TranscriptColumn transcript={data.transcript} url={videoUrl} />
+            </Col>
+          </Row>
         )}
-      </div>
-    </div>
+      </main>
+    </Stack>
   );
 };
 
