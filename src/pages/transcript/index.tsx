@@ -8,9 +8,17 @@ type Segment = { start: string; text: string };
 const sendMessage = (message: any): Promise<any> => {
   return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage(message, response => {
-      if (chrome.runtime.lastError) return reject(new Error(chrome.runtime.lastError.message));
-      if (response?.success) resolve(response);
-      else reject(new Error(response?.error || 'Unknown error'));
+      if (chrome.runtime.lastError) {
+        return reject(new Error(chrome.runtime.lastError.message));
+      }
+      // Some handlers might not return a response, so we resolve without a value.
+      if (response === undefined) {
+        return resolve(undefined);
+      }
+      if (response.success) {
+        return resolve(response);
+      }
+      reject(new Error(response.error || 'An unknown error occurred.'));
     });
   });
 };

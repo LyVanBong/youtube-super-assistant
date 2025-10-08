@@ -20,5 +20,5 @@ export async function handleGetTranscriptText(url: string, baseBody: BaseBody): 
 
 export async function handleOpenTranscriptPage(videoUrl: string): Promise<void> {
     await chrome.storage.local.set({ transcriptVideoUrl: videoUrl });
-    await chrome.tabs.create({ url: chrome.runtime.getURL('transcript.html') });
+    await chrome.tabs.create({ url: chrome.runtime.getURL('dashboard.html#transcript') });
 }
