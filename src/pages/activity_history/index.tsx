@@ -94,8 +94,8 @@ const ActivityHistory = () => {
       return;
     }
     const lowerCaseSearch = searchTerm.toLowerCase();
-    const filtered = currentHistory.filter(item => 
-      Object.values(item).some(val => 
+    const filtered = currentHistory.filter(item =>
+      Object.values(item).some(val =>
         String(val).toLowerCase().includes(lowerCaseSearch)
       )
     );
@@ -114,19 +114,19 @@ const ActivityHistory = () => {
     <Stack gap={3}>
       <header className="d-flex justify-content-between align-items-center">
         <h1>Trung tâm hoạt động</h1>
-        <Stack direction="horizontal" gap={2}>
-          <InputGroup style={{minWidth: '300px'}}>
-             <Form.Control 
-                placeholder="Tìm kiếm..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-          </InputGroup>
-          <Button variant="outline-secondary" onClick={loadHistory}>Làm mới</Button>
-          <Button variant="danger" onClick={clearHistory}>Xóa Lịch sử Mục này</Button>
-        </Stack>
+
       </header>
-      
+      <Stack direction="horizontal" gap={2}>
+        <InputGroup style={{ minWidth: '300px' }}>
+          <Form.Control
+            placeholder="Tìm kiếm..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </InputGroup>
+        <Button style={{ minWidth: '100px' }} variant="outline-secondary" onClick={loadHistory}>Làm mới</Button>
+        <Button style={{ minWidth: '200px' }} variant="danger" onClick={clearHistory}>Xóa lịch sử</Button>
+      </Stack>
       <Card className="flex-grow-1">
         <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k as HistoryType)} id="history-tabs" className="mb-3">
           <Tab eventKey="commentHistory" title="Lịch sử Bình luận" />

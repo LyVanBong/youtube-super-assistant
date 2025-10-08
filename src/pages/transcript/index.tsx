@@ -170,6 +170,7 @@ const TranscriptPage = () => {
   return (
     <Stack gap={3} className="vh-100 p-3">
       <header>
+        <h1>Bản ghi lời thoại</h1>
         <InputGroup>
           <Form.Control
             value={videoUrl}
