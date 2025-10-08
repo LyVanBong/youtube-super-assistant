@@ -104,7 +104,7 @@ const Popup = () => {
           <Row className="text-center mt-3">
             {features.map(feature => (
               <Col key={feature.id} xs={6} className="mb-3">
-                <Button variant="light" className="w-100 h-100 p-2" onClick={() => handleNavigation(feature.id)}>
+                <Button variant="light" className="w-100 h-100 p-3" onClick={() => handleNavigation(feature.id)}>
                   <Stack gap={2} className="align-items-center">
                     {feature.icon}
                     <span style={{ fontSize: '0.8rem' }}>{feature.name}</span>
