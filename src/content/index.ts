@@ -10,7 +10,8 @@ import { getVideoIdFromUrl } from './utils/navigation';
 
 console.log('[Super Assistant] Content script refactored and loaded.');
 
-let mainObserver: MutationObserver | null = null;
+let commentObserver: MutationObserver | null = null;
+let replyObserver: MutationObserver | null = null;
 
 /**
  * Main initialization function. 
@@ -18,7 +19,8 @@ let mainObserver: MutationObserver | null = null;
  */
 function initialize(): void {
     // 1. Reset state from previous page
-    if (mainObserver) mainObserver.disconnect();
+    if (commentObserver) commentObserver.disconnect();
+    if (replyObserver) replyObserver.disconnect();
     resetAutoActionsState();
 
     // 2. Set up UI elements that are always present or conditional
@@ -29,9 +31,14 @@ function initialize(): void {
         // 3. Start features specific to video pages
         setupVideoProgressListener(currentVideoId);
 
-        // 4. Set up observer for dynamic elements like comment boxes
-        mainObserver = observeForAddedNodes(SELECTORS.comments.section, () => {
+        // 4. Set up observers for dynamic elements
+        // Observer for the main comment button
+        commentObserver = observeForAddedNodes(SELECTORS.comments.aiButtonContainer, () => {
             injectAICommentButton();
+        });
+        
+        // Persistent observer for reply boxes that can appear anytime
+        replyObserver = observeForAddedNodes(SELECTORS.reply.replyBox, () => {
             injectAIReplyButtons();
         });
     }
