@@ -1,6 +1,7 @@
 const path = require('path');
 const CopyPlugin = require('copy-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = (env, argv) => {
   const isProduction = argv.mode === 'production';
@@ -8,8 +9,8 @@ module.exports = (env, argv) => {
   return {
     mode: isProduction ? 'production' : 'development',
     entry: {
-      'background/background': './src/background/background.ts',
-      'content/content': './src/content/content.ts',
+      'background/background': './src/background/index.ts',
+      'content/content': './src/content/index.ts',
       'popup/popup': './src/features/popup/Popup.tsx',
       'dashboard': './src/app/index.tsx',
     },
@@ -27,11 +28,14 @@ module.exports = (env, argv) => {
         },
         {
           test: /\.css$/i,
-          use: ['style-loader', 'css-loader'],
+          use: [MiniCssExtractPlugin.loader, 'css-loader'],
         },
       ],
     },
     plugins: [
+      new MiniCssExtractPlugin({
+        filename: '[name].css',
+      }),
       new CopyPlugin({
         patterns: [
           { from: 'src/manifest.json', to: 'manifest.json' },
