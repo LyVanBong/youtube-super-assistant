@@ -91,10 +91,10 @@ const Popup = () => {
 
   const renderFeatureGrid = () => {
     const features = [
-      { id: 'activity_history', name: 'Lịch sử', icon: <ClockHistory size={24} /> },
-      { id: 'transcript', name: 'Bản ghi', icon: <FileText size={24} /> },
-      { id: 'settings', name: 'Cài đặt', icon: <Gear size={24} /> },
-      { id: 'about', name: 'Giới thiệu', icon: <InfoCircle size={24} /> },
+      { id: 'activity_history', name: 'Lịch sử', icon: <ClockHistory size={20} /> },
+      { id: 'transcript', name: 'Bản ghi', icon: <FileText size={20} /> },
+      { id: 'settings', name: 'Cài đặt', icon: <Gear size={20} /> },
+      { id: 'about', name: 'Giới thiệu', icon: <InfoCircle size={20} /> },
     ];
 
     return (
@@ -104,8 +104,8 @@ const Popup = () => {
           <Row className="text-center mt-3">
             {features.map(feature => (
               <Col key={feature.id} xs={6} className="mb-3">
-                <Button variant="light" className="w-100 h-100 p-3" onClick={() => handleNavigation(feature.id)}>
-                  <Stack gap={2} className="align-items-center">
+                <Button variant="light"  className="w-100 h-100 p-2 mx-auto" onClick={() => handleNavigation(feature.id)}>
+                  <Stack gap={1} direction='horizontal' className="align-items-center">
                     {feature.icon}
                     <span style={{ fontSize: '0.8rem' }}>{feature.name}</span>
                   </Stack>
@@ -140,7 +140,7 @@ const Popup = () => {
           <Card.Title as="h5">Trung tâm AI</Card.Title>
           <ButtonGroup className="w-100">
             <Button variant="primary" onClick={() => handleAiAction('comment')} disabled={!currentTab}>Tạo Bình Luận</Button>
-            <Button variant="info" onClick={() => handleAiAction('summary')} disabled={!currentTab}>Tóm Tắt Video</Button>
+            <Button variant="primary" onClick={() => handleAiAction('summary')} disabled={!currentTab}>Tóm Tắt Video</Button>
           </ButtonGroup>
         </Card.Body>
       </Card>
@@ -192,7 +192,7 @@ const Popup = () => {
   );
 
   return (
-    <Container style={{ width: '380px' }} className="py-3">
+    <Container style={{ width: '380px', fontSize: '13px' }} className="py-3">
       <Stack direction="horizontal" gap={2} className="align-items-center mb-3">
         <Image src="../icons/icon48.png" width={30} height={30} />
         <h5 className="mb-0 fw-bold">Super Assistant</h5>
