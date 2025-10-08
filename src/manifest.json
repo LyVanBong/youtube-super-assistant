@@ -12,7 +12,8 @@
   ],
   "host_permissions": [
     "https://*.youtube.com/*",
-    "https://workflow.softty.net/*"
+    "https://workflow.softty.net/*",
+    "https://restcountries.com/*"
   ],
   "action": {
     "default_popup": "popup/popup.html",

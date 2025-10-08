@@ -1,93 +1,110 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import ReactDOM from 'react-dom/client';
 import './style.css';
 
 // --- Type Definitions ---
 type Segment = { start: string; text: string };
 
-// --- Helper Components ---
-const Loader = () => <div className="loader"></div>;
-
-const TranscriptSegment = ({ segment, videoUrl }: { segment: Segment, videoUrl: string }) => {
-  const handleCopy = (text: string) => navigator.clipboard.writeText(text);
-  const seconds = segment.start.split(':').reduce((acc, time) => (60 * acc) + +time, 0);
-
-  return (
-    <div className="segment">
-      <a href={`${videoUrl}&t=${seconds}s`} target="_blank" rel="noreferrer" className="timestamp">
-        {segment.start}
-      </a>
-      <p className="text">{segment.text}</p>
-      <button onClick={() => handleCopy(segment.text)} className="copy-btn">Copy</button>
-    </div>
-  );
-};
-
 // --- Main Component ---
 const Transcript = () => {
   const [videoUrl, setVideoUrl] = useState('');
-  const [transcript, setTranscript] = useState<Segment[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [videoDetails, setVideoDetails] = useState<any>(null);
+  const [transcript, setTranscript] = useState<Segment[]>([]);
 
-  const fetchTranscript = useCallback(async (url: string) => {
+  const fetchVideoData = useCallback(async (url: string) => {
     if (!url) return;
     setIsLoading(true);
     setError('');
+    setVideoDetails(null);
+    setTranscript([]);
+
     try {
-      const response = await chrome.runtime.sendMessage({ action: 'getTranscriptText', url });
-      if (response.success) {
-        // Simple parsing, assuming content is plain text for now
-        const segments = response.content.split('\n').map((line: string) => {
-          const parts = line.match(/\(?(\d{2}:\d{2})\)?\s*(.*)/) || ['', '00:00', line];
-          return { start: parts[1], text: parts[2] };
+      const [infoRes, transcriptRes] = await Promise.all([
+        chrome.runtime.sendMessage({ action: 'getVideoInfo', url }),
+        chrome.runtime.sendMessage({ action: 'getTranscriptText', url })
+      ]);
+
+      if (infoRes?.success) setVideoDetails(infoRes.details);
+      else throw new Error(infoRes?.error || 'Failed to fetch video info');
+
+      if (transcriptRes?.success) {
+        const segments = transcriptRes.content.split('\n').map((line: string) => {
+            const parts = line.match(/\(?(\d{2}:\d{2})\)?\s*(.*)/) || ['', '00:00', line];
+            return { start: parts[1], text: parts[2] };
         });
         setTranscript(segments);
       } else {
-        throw new Error(response.error);
+        setTranscript([]); // Set empty transcript but don't throw error
       }
-    } catch (e: any) { 
+
+    } catch (e: any) {
       setError(e.message);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
+  // Effect to load from storage on initial mount
   useEffect(() => {
     chrome.storage.local.get('transcriptVideoUrl', (result) => {
       if (result.transcriptVideoUrl) {
         setVideoUrl(result.transcriptVideoUrl);
-        fetchTranscript(result.transcriptVideoUrl);
+        fetchVideoData(result.transcriptVideoUrl);
         chrome.storage.local.remove('transcriptVideoUrl');
       }
-      else {
-        setIsLoading(false);
-      }
     });
-  }, [fetchTranscript]);
-
-  const handleFetchClick = () => {
-    fetchTranscript(videoUrl);
-  }
+  }, [fetchVideoData]);
 
   return (
-    <div className="container">
-      <h1>Bản ghi Video</h1>
-      <div className="url-input-container">
+    <div className="page-container transcript-page">
+      <header className="page-header">
         <input 
           type="text" 
           value={videoUrl}
           onChange={(e) => setVideoUrl(e.target.value)}
-          placeholder="Hoặc dán URL video YouTube vào đây"
+          placeholder="Dán URL video YouTube vào đây"
         />
-        <button onClick={handleFetchClick} disabled={isLoading}>Lấy bản ghi</button>
-      </div>
+        <button onClick={() => fetchVideoData(videoUrl)} disabled={isLoading}>
+          {isLoading ? 'Đang tải...' : 'Lấy thông tin'}
+        </button>
+      </header>
 
-      {isLoading && <Loader />}
-      {error && <p className="error">Lỗi: {error}</p>}
-      {!isLoading && !error && (
-        <div className="transcript-container">
-          {transcript.map((seg, i) => <TranscriptSegment key={i} segment={seg} videoUrl={videoUrl} />)}
+      {error && <p className="error-message">Lỗi: {error}</p>}
+
+      {!isLoading && !videoDetails && !error && <p>Dán một URL video để bắt đầu.</p>}
+
+      {videoDetails && (
+        <div className="content-grid">
+          <div className="info-column">
+            <div className="card">
+              <h3>{videoDetails.snippet?.title}</h3>
+              <p>bởi <b>{videoDetails.snippet?.channelTitle}</b></p>
+              <div className="video-embed">
+                <iframe src={`https://www.youtube.com/embed/${videoDetails.id}`} title={videoDetails.snippet?.title} frameBorder="0" allowFullScreen></iframe>
+              </div>
+            </div>
+            <div className="card">
+              <h4>Mô tả</h4>
+              <p className="description-text">{videoDetails.snippet?.description}</p>
+            </div>
+          </div>
+
+          <div className="transcript-column">
+            <div className="card">
+              <h4>Lời thoại</h4>
+              <div className="transcript-content">
+                {transcript.length > 0 ? (
+                  transcript.map((seg, i) => (
+                    <div key={i} className="segment">
+                      <span className="timestamp">{seg.start}</span>
+                      <p className="text">{seg.text}</p>
+                    </div>
+                  ))
+                ) : <p>Không có lời thoại cho video này.</p>}
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
