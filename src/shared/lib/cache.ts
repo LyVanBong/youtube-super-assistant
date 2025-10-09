@@ -1,19 +1,19 @@
-interface CacheEntry {
-  data: any;
+interface CacheEntry<T> {
+  data: T;
   expire: number;
 }
 
-const cache: { [key: string]: CacheEntry } = {};
+const cache: { [key: string]: CacheEntry<unknown> } = {};
 
-export const get = (key: string): any | null => {
+export const get = <T>(key: string): T | null => {
     if (cache[key] && cache[key].expire > Date.now()) {
-        return cache[key].data;
+        return cache[key].data as T;
     }
     delete cache[key]; // Expired or non-existent
     return null;
 };
 
-export const set = (key: string, data: any, ttl = 60 * 60 * 1000): void => {
+export const set = <T>(key: string, data: T, ttl = 60 * 60 * 1000): void => {
     cache[key] = {
         data,
         expire: Date.now() + ttl,

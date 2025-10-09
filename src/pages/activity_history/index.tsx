@@ -24,7 +24,7 @@ const HistoryTable = ({ items, type }: { items: HistoryItem[], type: HistoryType
   const getVideoId = (url: string) => {
     try {
       return new URL(url).searchParams.get('v');
-    } catch (e) {
+    } catch {
       return null;
     }
   };

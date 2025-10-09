@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Button, Badge, Stack, Placeholder } from 'react-bootstrap';
-import { BarChartSteps, ChatLeftText, HandThumbsUp, ClockHistory, Gear } from 'react-bootstrap-icons';
+import { BarChartSteps, ChatLeftText, HandThumbsUp, ClockHistory, Gear, FileText } from 'react-bootstrap-icons';
 
 // --- Type Definitions ---
 interface Stats {
   summaries: number;
   comments: number;
   autoLikes: number;
+  transcripts: number; // Added transcripts stat
 }
 
 interface HistoryItem {
@@ -27,6 +28,8 @@ interface Settings {
   isAutoCommentEnabled?: boolean;
   aiLanguage?: string;
 }
+
+type HistoryKey = 'commentHistory' | 'summaryHistory' | 'likeHistory' | 'transcriptHistory';
 
 // --- Helper Functions ---
 function timeAgo(dateString: string): string {
@@ -67,7 +70,7 @@ const Dashboard = () => {
     });
 
     // Fetch all history types and combine them
-    const historyKeys: (keyof Stats)[] = ['commentHistory', 'summaryHistory', 'likeHistory', 'transcriptHistory'];
+    const historyKeys: HistoryKey[] = ['commentHistory', 'summaryHistory', 'likeHistory', 'transcriptHistory'];
     chrome.storage.local.get(historyKeys, (result) => {
       const allHistory: (HistoryItem & { type: string })[] = [];
       
@@ -125,7 +128,7 @@ const Dashboard = () => {
 
       {/* Stats Cards */}
       <Row>
-        <Col md={4}>
+        <Col md={6} lg={3} className="mb-3">
           {stats ? (
             <Card className="shadow-sm h-100">
               <Card.Body>
@@ -140,7 +143,7 @@ const Dashboard = () => {
             </Card>
           ) : renderStatsPlaceholder()}
         </Col>
-        <Col md={4}>
+        <Col md={6} lg={3} className="mb-3">
           {stats ? (
             <Card className="shadow-sm h-100">
               <Card.Body>
@@ -155,7 +158,7 @@ const Dashboard = () => {
             </Card>
           ) : renderStatsPlaceholder()}
         </Col>
-        <Col md={4}>
+        <Col md={6} lg={3} className="mb-3">
           {stats ? (
             <Card className="shadow-sm h-100">
               <Card.Body>
@@ -164,6 +167,21 @@ const Dashboard = () => {
                   <div>
                     <Card.Text className="mb-0 text-muted">Lượt tự động thích</Card.Text>
                     <Card.Title as="h2" className="mb-0 fw-bold">{stats.autoLikes || 0}</Card.Title>
+                  </div>
+                </Stack>
+              </Card.Body>
+            </Card>
+          ) : renderStatsPlaceholder()}
+        </Col>
+        <Col md={6} lg={3} className="mb-3">
+          {stats ? (
+            <Card className="shadow-sm h-100">
+              <Card.Body>
+                <Stack direction="horizontal" gap={3} className="align-items-center">
+                  <FileText size={40} className="text-info" />
+                  <div>
+                    <Card.Text className="mb-0 text-muted">Lượt lấy lời thoại</Card.Text>
+                    <Card.Title as="h2" className="mb-0 fw-bold">{stats.transcripts || 0}</Card.Title>
                   </div>
                 </Stack>
               </Card.Body>

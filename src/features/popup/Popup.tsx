@@ -8,7 +8,6 @@ import {
   ButtonGroup,
   Spinner,
   Form,
-  Nav,
   Image,
   Stack,
   Alert,
@@ -18,16 +17,48 @@ import {
 import { ClockHistory, FileText, Gear, InfoCircle, Grid3x3GapFill } from 'react-bootstrap-icons';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-// --- Helper Types and Functions ---
+// --- Type Definitions ---
 type View = 'dashboard' | 'processing';
 type AiAction = 'comment' | 'summary';
 
-const sendMessage = (message: any): Promise<any> => {
+interface Message {
+  action: string;
+  [key: string]: unknown;
+}
+
+interface ResponseMessage {
+  success: boolean;
+  content?: string;
+  details?: VideoDetails;
+  error?: string;
+}
+
+interface VideoDetails {
+  snippet?: {
+    channelTitle: string;
+    title: string;
+  };
+}
+
+interface Settings {
+  isAutoLikeEnabled?: boolean;
+  isAutoCommentEnabled?: boolean;
+  aiLanguage?: string;
+  [key: string]: unknown;
+}
+
+// --- Helper Functions ---
+const sendMessage = (message: Message): Promise<ResponseMessage> => {
   return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage(message, response => {
-      if (chrome.runtime.lastError) return reject(new Error(chrome.runtime.lastError.message));
-      if (response?.success) resolve(response);
-      else reject(new Error(response?.error || 'Unknown error'));
+    chrome.runtime.sendMessage(message, (response: ResponseMessage) => {
+      if (chrome.runtime.lastError) {
+        return reject(new Error(chrome.runtime.lastError.message));
+      }
+      if (response?.success) {
+        resolve(response);
+      } else {
+        reject(new Error(response?.error || 'Unknown error'));
+      }
     });
   });
 };
@@ -38,8 +69,8 @@ const Popup = () => {
   const [aiResult, setAiResult] = useState('');
   const [lastAction, setLastAction] = useState<AiAction | null>(null);
   const [currentTab, setCurrentTab] = useState<chrome.tabs.Tab | null>(null);
-  const [videoDetails, setVideoDetails] = useState<any>(null);
-  const [settings, setSettings] = useState<any>({});
+  const [videoDetails, setVideoDetails] = useState<VideoDetails | null>(null);
+  const [settings, setSettings] = useState<Settings>({});
   const [languages, setLanguages] = useState<string[]>(['English', 'Vietnamese']);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,20 +78,20 @@ const Popup = () => {
   useEffect(() => {
     fetchLanguages().then(setLanguages);
 
-    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const tab = tabs[0];
       if (tab && tab.url && tab.url.includes("youtube.com/watch")) {
         setCurrentTab(tab);
         sendMessage({ action: 'getVideoInfo', url: tab.url })
-          .then(res => setVideoDetails(res.details))
-          .catch(err => setError('Could not fetch video details.'));
+          .then((res) => setVideoDetails(res.details || null))
+          .catch(() => setError('Could not fetch video details.'));
       }
     });
 
-    chrome.storage.sync.get(null, items => setSettings(items));
+    chrome.storage.sync.get(null, (items: Settings) => setSettings(items));
   }, []);
 
-  const handleSettingChange = (key: string, value: any) => {
+  const handleSettingChange = (key: string, value: string | boolean) => {
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
     chrome.storage.sync.set({ [key]: value });
@@ -75,11 +106,13 @@ const Popup = () => {
     try {
       const response = await sendMessage({
         action: action === 'comment' ? 'createComment' : 'summarizeVideo',
-        url: currentTab.url
+        url: currentTab.url,
       });
-      setAiResult(response.content);
-    } catch (error: any) {
-      setError(`Lỗi: ${error.message}`);
+      setAiResult(response.content || '');
+    } catch (error) {
+      if (error instanceof Error) {
+        setError(`Lỗi: ${error.message}`);
+      }
       setView('dashboard');
     }
   };
@@ -102,10 +135,10 @@ const Popup = () => {
         <Card.Body>
           <Card.Title as="h5" className="d-flex align-items-center"><Grid3x3GapFill className="me-2" /> Tính năng khác</Card.Title>
           <Row className="text-center mt-3">
-            {features.map(feature => (
+            {features.map((feature) => (
               <Col key={feature.id} xs={6} className="mb-3">
-                <Button variant="light"  className="w-100 h-100 p-2 mx-auto" onClick={() => handleNavigation(feature.id)}>
-                  <Stack gap={1} direction='horizontal' className="align-items-center">
+                <Button variant="light" className="w-100 h-100 p-2" onClick={() => handleNavigation(feature.id)}>
+                  <Stack gap={1} className="align-items-center">
                     {feature.icon}
                     <span style={{ fontSize: '0.8rem' }}>{feature.name}</span>
                   </Stack>
@@ -116,7 +149,7 @@ const Popup = () => {
         </Card.Body>
       </Card>
     );
-  }
+  };
 
   const renderDashboard = () => (
     <Stack gap={3}>
@@ -140,7 +173,7 @@ const Popup = () => {
           <Card.Title as="h5">Trung tâm AI</Card.Title>
           <ButtonGroup className="w-100">
             <Button variant="primary" onClick={() => handleAiAction('comment')} disabled={!currentTab}>Tạo Bình Luận</Button>
-            <Button variant="primary" onClick={() => handleAiAction('summary')} disabled={!currentTab}>Tóm Tắt Video</Button>
+            <Button variant="info" onClick={() => handleAiAction('summary')} disabled={!currentTab}>Tóm Tắt Video</Button>
           </ButtonGroup>
         </Card.Body>
       </Card>
@@ -151,13 +184,13 @@ const Popup = () => {
         <Card.Body>
           <Card.Title as="h5">Cài đặt nhanh</Card.Title>
           <Form>
-            <Form.Check type="switch" id="auto-like-switch" label="Tự động thích" checked={settings.isAutoLikeEnabled ?? false} onChange={e => handleSettingChange('isAutoLikeEnabled', e.target.checked)} />
-            <Form.Check type="switch" id="auto-comment-switch" label="Tự động bình luận" checked={settings.isAutoCommentEnabled ?? false} onChange={e => handleSettingChange('isAutoCommentEnabled', e.target.checked)} />
+            <Form.Check type="switch" id="auto-like-switch" label="Tự động thích" checked={settings.isAutoLikeEnabled ?? false} onChange={(e) => handleSettingChange('isAutoLikeEnabled', e.target.checked)} />
+            <Form.Check type="switch" id="auto-comment-switch" label="Tự động bình luận" checked={settings.isAutoCommentEnabled ?? false} onChange={(e) => handleSettingChange('isAutoCommentEnabled', e.target.checked)} />
             <Form.Group as={Row} className="mt-2 align-items-center">
               <Form.Label column sm={5}>Ngôn ngữ AI</Form.Label>
               <Col sm={7}>
-                <Form.Select size="sm" value={settings.aiLanguage || 'English'} onChange={e => handleSettingChange('aiLanguage', e.target.value)}>
-                  {languages.map(lang => <option key={lang} value={lang}>{lang}</option>)}
+                <Form.Select size="sm" value={settings.aiLanguage || 'English'} onChange={(e) => handleSettingChange('aiLanguage', e.target.value)}>
+                  {languages.map((lang) => <option key={lang} value={lang}>{lang}</option>)}
                 </Form.Select>
               </Col>
             </Form.Group>

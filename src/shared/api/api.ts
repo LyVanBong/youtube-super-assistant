@@ -10,7 +10,7 @@ interface ApiRequestBody {
     apiKey?: string;
     timestamp?: string;
     comment?: string; // For replies
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 async function fetchFromApi(body: ApiRequestBody, queryParam?: string): Promise<string> {

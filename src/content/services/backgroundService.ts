@@ -1,7 +1,12 @@
 
 // A typed service for communicating with the background script.
 
-function sendMessage<T>(message: any): Promise<T> {
+interface Message {
+    action: string;
+    [key: string]: unknown;
+}
+
+function sendMessage<T>(message: Message): Promise<T> {
     return new Promise((resolve, reject) => {
         chrome.runtime.sendMessage(message, (response) => {
             if (chrome.runtime.lastError) {

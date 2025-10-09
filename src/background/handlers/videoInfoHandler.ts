@@ -1,13 +1,20 @@
-
 import * as api from '../../shared/api/api';
 import * as cache from '../../shared/lib/cache';
 import { BaseBody } from '../types';
 
-export async function handleGetVideoInfo(url: string, baseBody: BaseBody): Promise<any> {
+interface VideoDetails {
+    snippet?: {
+        channelTitle: string;
+        title: string;
+    };
+    [key: string]: unknown;
+}
+
+export async function handleGetVideoInfo(url: string, baseBody: BaseBody): Promise<{ success: boolean; details: VideoDetails }> {
     const cacheKey = `info_${url}`;
     const cachedData = cache.get(cacheKey);
     if (cachedData) {
-        return { success: true, details: cachedData };
+        return { success: true, details: cachedData as VideoDetails };
     }
 
     const responseText = await api.fetchVideoInfo(baseBody);

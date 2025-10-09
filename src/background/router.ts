@@ -1,4 +1,3 @@
-
 import { BaseRequest, Settings, BaseBody } from './types';
 import { handleCreateComment, handleCreateReply } from './handlers/commentHandler';
 import { handleSummarizeVideo } from './handlers/summaryHandler';
@@ -8,8 +7,17 @@ import { handleLikeVideo } from './handlers/likeHandler';
 import { handleGetVideoInfo } from './handlers/videoInfoHandler';
 import { handleOpenUpdateNotesPage, handleUserDismissedVersion } from './handlers/navigationHandler';
 
+// --- Type Definitions for Router ---
+interface HandlerResponse {
+    success: boolean;
+    [key: string]: unknown;
+}
+
+type Handler = (request: BaseRequest, settings: Settings) => Promise<HandlerResponse | void>;
+type ResponsePayload = HandlerResponse | { success: boolean; error: string };
+
 // The router maps action strings to handler functions.
-const handlers: { [key: string]: (request: BaseRequest, settings: Settings) => Promise<any> } = {
+const handlers: { [key: string]: Handler } = {
     openUpdateNotesPage: () => handleOpenUpdateNotesPage(),
     userDismissedVersion: (request) => handleUserDismissedVersion(request.version!),
     createComment: (request, settings) => handleCreateComment(request.url!, request.timestamp, createBaseBody(request, settings)),
@@ -19,7 +27,7 @@ const handlers: { [key: string]: (request: BaseRequest, settings: Settings) => P
     openTranscriptPage: (request) => handleOpenTranscriptPage(request.videoUrl!),
     isVideoInHistory: (request) => handleIsVideoInHistory(request.videoId!),
     isVideoLiked: (request) => handleIsVideoLiked(request.videoId!),
-    likeVideo: (request) => handleLikeVideo(request.url!),
+    likeVideo: (request, settings) => handleLikeVideo(request.url!, createBaseBody(request, settings)),
     getVideoInfo: (request, settings) => handleGetVideoInfo(request.url!, createBaseBody(request, settings)),
 };
 
@@ -32,7 +40,7 @@ function createBaseBody(request: BaseRequest, settings: Settings): BaseBody {
     };
 }
 
-export async function route(request: BaseRequest, sendResponse: (response?: any) => void): Promise<void> {
+export async function route(request: BaseRequest, sendResponse: (response?: ResponsePayload) => void): Promise<void> {
     const handler = handlers[request.action];
     if (!handler) {
         sendResponse({ success: false, error: `Unknown action: ${request.action}` });

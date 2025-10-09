@@ -1,10 +1,16 @@
+interface Country {
+  languages: {
+    [key: string]: string;
+  };
+}
+
 export const fetchLanguages = async (): Promise<string[]> => {
   try {
     const response = await fetch('https://restcountries.com/v3.1/independent?status=true&fields=languages');
     if (!response.ok) throw new Error('Network response was not ok');
-    const countries = await response.json();
+    const countries: Country[] = await response.json();
     const languageMap = new Map<string, boolean>();
-    countries.forEach((country: any) => {
+    countries.forEach((country: Country) => {
       if (country.languages) {
         for (const code in country.languages) {
           const name = country.languages[code];

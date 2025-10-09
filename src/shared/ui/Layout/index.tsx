@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Col, Nav, Image, Stack, Card, Button } from 'react-bootstrap';
+import { Nav, Image, Stack, Card, Button } from 'react-bootstrap';
 
 interface LayoutProps {
   activeView: string;

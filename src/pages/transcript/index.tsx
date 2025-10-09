@@ -4,15 +4,44 @@ import { Stack, Card, Button, Form, Spinner, Alert, Row, Col, InputGroup, Ratio,
 // --- Type Definitions ---
 type Segment = { start: string; text: string };
 
+interface Message {
+  action: string;
+  [key: string]: unknown;
+}
+
+interface ResponseMessage {
+  success: boolean;
+  content?: string;
+  details?: VideoDetails;
+  error?: string;
+}
+
+interface VideoDetails {
+  id: string;
+  snippet?: {
+    title: string;
+    channelId: string;
+    channelTitle: string;
+    description: string;
+    publishedAt: string;
+    tags: string[];
+  };
+  statistics?: {
+    viewCount: string;
+    likeCount: string;
+    commentCount: string;
+  };
+}
+
 // --- Helper Functions ---
-const sendMessage = (message: any): Promise<any> => {
+const sendMessage = (message: Message): Promise<ResponseMessage | undefined> => {
   return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage(message, response => {
-      if (chrome.runtime.lastError) return reject(new Error(chrome.runtime.lastError.message));
-      if (response?.success) return resolve(response);
-      // Handle cases where there's no response but also no error
-      if (response === undefined) return resolve(undefined);
-      reject(new Error(response?.error || 'An unknown error occurred.'));
+    chrome.runtime.sendMessage(message, (response: ResponseMessage | undefined) => {
+      if (chrome.runtime.lastError) {
+        return reject(new Error(chrome.runtime.lastError.message));
+      }
+      // Response can be undefined if the background script doesn't send one.
+      resolve(response);
     });
   });
 };
@@ -20,20 +49,20 @@ const sendMessage = (message: any): Promise<any> => {
 const copyToClipboard = (text: string) => navigator.clipboard.writeText(text);
 
 // --- Child Components ---
-const InfoColumn = ({ details }: { details: any }) => {
+const InfoColumn = ({ details }: { details: VideoDetails | null }) => {
   if (!details) return null;
-  const { snippet = {}, statistics = {}, id } = details;
+  const { snippet, statistics, id } = details;
   return (
     <Stack gap={3}>
       <Card>
         <Ratio aspectRatio="16x9">
-          <iframe src={`https://www.youtube.com/embed/${id}`} title={snippet.title} frameBorder="0" allowFullScreen />
+          <iframe src={`https://www.youtube.com/embed/${id}`} title={snippet?.title} frameBorder="0" allowFullScreen />
         </Ratio>
         <Card.Body>
-          <Card.Title>{snippet.title}</Card.Title>
+          <Card.Title>{snippet?.title}</Card.Title>
           <Card.Subtitle className="mb-2 text-muted">
-            <a href={`https://www.youtube.com/channel/${snippet.channelId}`} target="_blank" rel="noreferrer" className="text-muted text-decoration-none">
-              {snippet.channelTitle}
+            <a href={`https://www.youtube.com/channel/${snippet?.channelId}`} target="_blank" rel="noreferrer" className="text-muted text-decoration-none">
+              {snippet?.channelTitle}
             </a>
           </Card.Subtitle>
         </Card.Body>
@@ -42,22 +71,22 @@ const InfoColumn = ({ details }: { details: any }) => {
         <Card.Header>Thống kê</Card.Header>
         <Card.Body>
           <Row>
-            <Col><strong>Lượt xem:</strong> {Number(statistics.viewCount || 0).toLocaleString()}</Col>
-            <Col><strong>Lượt thích:</strong> {Number(statistics.likeCount || 0).toLocaleString()}</Col>
+            <Col><strong>Lượt xem:</strong> {Number(statistics?.viewCount || 0).toLocaleString()}</Col>
+            <Col><strong>Lượt thích:</strong> {Number(statistics?.likeCount || 0).toLocaleString()}</Col>
           </Row>
           <Row>
-            <Col><strong>Bình luận:</strong> {Number(statistics.commentCount || 0).toLocaleString()}</Col>
-            <Col><strong>Ngày đăng:</strong> {new Date(snippet.publishedAt).toLocaleDateString()}</Col>
+            <Col><strong>Bình luận:</strong> {Number(statistics?.commentCount || 0).toLocaleString()}</Col>
+            <Col><strong>Ngày đăng:</strong> {snippet?.publishedAt ? new Date(snippet.publishedAt).toLocaleDateString() : 'N/A'}</Col>
           </Row>
         </Card.Body>
       </Card>
       <Card>
         <Card.Header>Mô tả</Card.Header>
         <Card.Body style={{ whiteSpace: 'pre-wrap', maxHeight: '200px', overflowY: 'auto' }}>
-          {snippet.description}
+          {snippet?.description}
         </Card.Body>
       </Card>
-      {snippet.tags && (
+      {snippet?.tags && (
         <Card>
           <Card.Header>Tags</Card.Header>
           <Card.Body>
@@ -79,9 +108,10 @@ const TranscriptColumn = ({ transcript, url }: { transcript: Segment[], url: str
     setSummary({ text: '', isLoading: true });
     try {
       const res = await sendMessage({ action: 'summarizeVideo', url });
-      setSummary({ text: res.content, isLoading: false });
-    } catch (e: any) {
-      setSummary({ text: `Lỗi: ${e.message}`, isLoading: false });
+      setSummary({ text: res?.content || '', isLoading: false });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Lỗi không xác định';
+      setSummary({ text: `Lỗi: ${message}`, isLoading: false });
     }
   };
 
@@ -130,7 +160,7 @@ const TranscriptPage = () => {
   const [videoUrl, setVideoUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [data, setData] = useState<{ details: any, transcript: Segment[] } | null>(null);
+  const [data, setData] = useState<{ details: VideoDetails, transcript: Segment[] } | null>(null);
 
   const fetchVideoData = useCallback(async (url: string) => {
     if (!url || !url.includes('youtube.com')) {
@@ -143,7 +173,7 @@ const TranscriptPage = () => {
         sendMessage({ action: 'getVideoInfo', url }),
         sendMessage({ action: 'getTranscriptText', url })
       ]);
-      if (!infoRes?.success) throw new Error(infoRes?.error || 'Failed to fetch video info');
+      if (!infoRes?.success || !infoRes.details) throw new Error(infoRes?.error || 'Failed to fetch video info');
       
       let segments: Segment[] = [];
       if (transcriptRes?.success && transcriptRes.content) {
@@ -153,7 +183,9 @@ const TranscriptPage = () => {
         });
       }
       setData({ details: infoRes.details, transcript: segments });
-    } catch (e: any) { setError(e.message); } 
+    } catch (e) { 
+      if (e instanceof Error) setError(e.message); 
+    } 
     finally { setIsLoading(false); }
   }, []);
 

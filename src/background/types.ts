@@ -15,9 +15,10 @@ export type Settings = {
     aiApiKey: string;
 };
 
-export type BaseBody = {
+export interface BaseBody {
     url: string;
     language: string;
     prompt: string;
     apiKey: string;
-};
+    [key: string]: unknown;
+}

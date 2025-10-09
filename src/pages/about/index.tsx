@@ -1,7 +1,7 @@
 import React from 'react';
 import { Stack, Card, Tabs, Tab, Image, ListGroup, Ratio } from 'react-bootstrap';
 
-type TabKey = 'about' | 'support' | 'feature' | 'bug';
+
 
 const About = () => {
   const version = chrome.runtime.getManifest().version;

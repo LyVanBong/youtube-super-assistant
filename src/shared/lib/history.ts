@@ -13,7 +13,7 @@ type StorageKey = 'commentHistory' | 'summaryHistory' | 'likeHistory' | 'transcr
 function incrementStat(statKey: StatKey): void {
     chrome.storage.local.get({ stats: { comments: 0, summaries: 0, likes: 0, transcripts: 0 } }, (result) => {
         const newStats = result.stats;
-        if (newStats.hasOwnProperty(statKey)) {
+        if (Object.prototype.hasOwnProperty.call(newStats, statKey)) {
             newStats[statKey]++;
         }
         chrome.storage.local.set({ stats: newStats });
@@ -65,7 +65,7 @@ export function isVideoInCommentHistory(videoId: string, commentHistory: History
             const hasValidComment = item.commentContent?.trim() !== '';
             const itemVideoId = new URL(item.videoUrl).searchParams.get('v');
             return itemVideoId === videoId && hasValidComment;
-        } catch (e) {
+        } catch {
             return false;
         }
     });
@@ -79,7 +79,7 @@ export function isVideoInLikeHistory(videoId: string, likeHistory: HistoryData[]
         try {
             const itemVideoId = new URL(item.videoUrl).searchParams.get('v');
             return itemVideoId === videoId;
-        } catch (e) {
+        } catch {
             return false;
         }
     });

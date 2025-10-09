@@ -32,7 +32,7 @@ const Settings = () => {
     fetchLanguages().then(setLanguages);
   }, [loadSettings]);
 
-  const handleSettingChange = (key: string, value: any) => {
+  const handleSettingChange = (key: string, value: string | number | boolean) => {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 

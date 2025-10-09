@@ -15,7 +15,7 @@ export function observeForElement(
     targetNode: Node = document.body,
     options: MutationObserverInit = { childList: true, subtree: true }
 ): MutationObserver {
-    const observer = new MutationObserver((mutations, obs) => {
+    const observer = new MutationObserver(() => {
         const targetElement = document.querySelector(selector);
         if (targetElement) {
             callback(targetElement);

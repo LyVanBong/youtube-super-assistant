@@ -1,14 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import ReactDOM from 'react-dom/client';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { Spinner } from 'react-bootstrap';
 
 import Layout from '../shared/ui/Layout';
-import Dashboard from '../pages/dashboard';
-import Settings from '../pages/settings';
-import ActivityHistory from '../pages/activity_history';
-import Transcript from '../pages/transcript';
-import UpdateNotes from '../pages/update_notes';
-import About from '../pages/about';
+
+// Lazy load page components for code splitting
+const Dashboard = React.lazy(() => import('../pages/dashboard'));
+const Settings = React.lazy(() => import('../pages/settings'));
+const ActivityHistory = React.lazy(() => import('../pages/activity_history'));
+const Transcript = React.lazy(() => import('../pages/transcript'));
+const UpdateNotes = React.lazy(() => import('../pages/update_notes'));
+const About = React.lazy(() => import('../pages/about'));
 
 const App = () => {
   const [activeView, setActiveView] = useState('dashboard');
@@ -49,7 +52,9 @@ const App = () => {
 
   return (
     <Layout activeView={activeView} onNavigate={handleNavigate}>
-      {renderActiveView()}
+      <Suspense fallback={<div className="w-100 vh-100 d-flex justify-content-center align-items-center"><Spinner animation="border" /></div>}>
+        {renderActiveView()}
+      </Suspense>
     </Layout>
   );
 };

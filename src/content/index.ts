@@ -46,7 +46,7 @@ function initialize(): void {
 
 // --- LISTENERS ---
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request) => {
     const currentVideoId = getVideoIdFromUrl(window.location.href);
 
     if (request.action === "ytHistoryUpdated") {

@@ -10,11 +10,11 @@ export async function checkAndShowBanner(tabId: number): Promise<void> {
             chrome.tabs.sendMessage(tabId, {
                 action: "showUpdateBanner",
                 version: newVersionInfo.version
-            }).catch(err => {
+            }).catch(() => {
                 // Bỏ qua lỗi nếu content script chưa sẵn sàng
             });
         }
-    } catch (e) {
+    } catch {
         // Bỏ qua lỗi nếu không thể truy cập storage
     }
 }
@@ -50,7 +50,7 @@ export async function handleVersionCheck(): Promise<void> {
         } else {
             await chrome.storage.local.remove(['newVersionInfo', 'dismissedVersion']);
         }
-    } catch (error) {
+    } catch {
         // Bỏ qua lỗi một cách âm thầm
     }
 }

@@ -7,7 +7,7 @@
 export function getVideoIdFromUrl(url: string): string | null {
     try {
         return new URLSearchParams(new URL(url).search).get('v');
-    } catch (e) {
+    } catch {
         return null;
     }
 }
