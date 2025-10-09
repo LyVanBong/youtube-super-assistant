@@ -74,6 +74,8 @@ async function runCommentAutomation(expectedVideoId: string | null, manualCommen
 
         await randomizedDelay(300, 900);
         submitButton.click();
+        await randomizedDelay(1000, 2000); // Wait a bit before scrolling
+        await scrollToElement(SELECTORS.video, 'start');
     } catch (error: unknown) {
         console.warn('[Super Assistant] Comment automation error:', (error as Error).message);
     }
