@@ -109,7 +109,7 @@ const Dashboard = () => {
   const renderStatsPlaceholder = () => (
     <Card className="shadow-sm h-100">
       <Card.Body>
-        <Placeholder as={Card.Text} animation="glow">
+        <Placeholder as="div" className="card-text" animation="glow">
           <Placeholder xs={7} /> <Placeholder xs={4} /> 
           <Placeholder as="h2"><Placeholder xs={6} /></Placeholder>
         </Placeholder>
