@@ -143,7 +143,7 @@ const Settings = () => {
         </Card.Body>
       </Card>
 
-      <div className="bg-light p-3 mt-4 rounded d-flex justify-content-end align-items-center position-sticky bottom-0">
+      <div className="p-3 mt-4 rounded d-flex justify-content-end align-items-center position-sticky bottom-0">
           {status && <Alert variant="success" className="me-3 mb-0 py-2 px-3">{status}</Alert>}
           <Button onClick={saveSettings}>Lưu Cài đặt</Button>
       </div>

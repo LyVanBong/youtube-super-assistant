@@ -34,7 +34,7 @@ const Layout: React.FC<LayoutProps> = ({ activeView, onNavigate, children }) => 
     <div style={{ display: 'flex', height: '100vh' }}>
       {/* Sidebar */}
       <div
-        className="bg-light border-end p-3 d-flex flex-column"
+        className="border-end p-3 d-flex flex-column"
         style={{ width: '280px', flexShrink: 0 }}
       >
         <Stack gap={3} className="align-items-center mb-4">
@@ -61,7 +61,7 @@ const Layout: React.FC<LayoutProps> = ({ activeView, onNavigate, children }) => 
         <div className="flex-grow-1" />
 
         {/* Footer Banner */}
-        <Card className="text-center border-0 bg-light">
+        <Card className="text-center border-0">
           <Card.Body>
             {/* <Card.Title>Nâng cấp PRO</Card.Title> */}
             <Card.Title>Xem thêm thông tin</Card.Title>
