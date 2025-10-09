@@ -63,11 +63,12 @@ const Layout: React.FC<LayoutProps> = ({ activeView, onNavigate, children }) => 
         {/* Footer Banner */}
         <Card className="text-center border-0 bg-light">
           <Card.Body>
-            <Card.Title>Nâng cấp PRO</Card.Title>
+            {/* <Card.Title>Nâng cấp PRO</Card.Title> */}
+            <Card.Title>Xem thêm thông tin</Card.Title>
             <Card.Text className="text-muted small">
               Mở khóa các tính năng mạnh mẽ hơn!
             </Card.Text>
-            <Button variant="primary" size="sm">Tìm hiểu thêm</Button>
+            <Button variant="primary" size="sm" onClick={() => window.open('https://blogs.softty.net/tien-ich-ai-tang-tuong-tac-youtube/', '_blank')}>Tìm hiểu thêm</Button>
           </Card.Body>
         </Card>
       </div>
