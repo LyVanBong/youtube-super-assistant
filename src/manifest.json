@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "YouTube Super Assistant",
-  "version": "11.5",
+  "version": "2.0.0",
   "description": "Trợ lý tự động cho YouTube: tạo bình luận, trả lời, cuộn trang và hơn thế nữa.",
   "permissions": [
     "scripting",
@@ -12,7 +12,8 @@
   ],
   "host_permissions": [
     "https://*.youtube.com/*",
-    "https://workflow.softty.net/*"
+    "https://workflow.softty.net/*",
+    "https://restcountries.com/*"
   ],
   "action": {
     "default_popup": "popup/popup.html",
@@ -32,6 +33,9 @@
       ],
       "js": [
         "content/content.js"
+      ],
+      "css": [
+        "content/content.css"
       ]
     }
   ],
@@ -40,12 +44,12 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "options_page": "pages/settings/settings.html",
+  "options_page": "dashboard.html",
   "web_accessible_resources": [
     {
       "resources": [
         "icons/icon48.png",
-        "pages/about/about.html"
+        "dashboard.html"
       ],
       "matches": [
         "*://*.youtube.com/*"
