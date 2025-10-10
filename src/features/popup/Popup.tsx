@@ -14,7 +14,7 @@ import {
   Row,
   Col,
 } from 'react-bootstrap';
-import { ClockHistory, FileText, Gear, InfoCircle, Grid3x3GapFill } from 'react-bootstrap-icons';
+import { ClockHistory, FileText, Gear, InfoCircle } from 'react-bootstrap-icons';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 // --- Type Definitions ---
@@ -133,19 +133,20 @@ const Popup = () => {
     return (
       <Card>
         <Card.Body>
-          <Card.Title as="h5" className="d-flex align-items-center"><Grid3x3GapFill className="me-2" /> Tính năng khác</Card.Title>
-          <Row className="text-center mt-3">
+          <Card.Title as="h5">Tính năng</Card.Title>
+          <ButtonGroup className="w-100 mt-2">
             {features.map((feature) => (
-              <Col key={feature.id} xs={6} className="mb-3">
-                <Button variant="dark" className="w-100 h-100 p-2" onClick={() => handleNavigation(feature.id)}>
-                  <Stack gap={1} className="align-items-center">
-                    {feature.icon}
-                    <span style={{ fontSize: '0.8rem' }}>{feature.name}</span>
-                  </Stack>
-                </Button>
-              </Col>
+              <Button
+                key={feature.id}
+                variant="secondary"
+                className="w-100"
+                onClick={() => handleNavigation(feature.id)}
+                title={feature.name}
+              >
+                {feature.icon}
+              </Button>
             ))}
-          </Row>
+          </ButtonGroup>
         </Card.Body>
       </Card>
     );
