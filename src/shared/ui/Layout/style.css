@@ -1,0 +1,88 @@
+/* Sidebar styles */
+.sidebar {
+  width: 280px;
+  transition: width 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  border-right: 1px solid #dee2e6;
+}
+
+.sidebar.collapsed {
+  width: 90px;
+  align-items: center;
+}
+
+/* Header inside sidebar */
+.sidebar-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.sidebar-header .sidebar-title {
+  transition: opacity 0.2s ease-in-out;
+  opacity: 1;
+}
+
+.sidebar.collapsed .sidebar-title {
+  opacity: 0;
+  display: none;
+}
+
+/* Navigation items */
+.nav-item .nav-link {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  transition: justify-content 0.3s ease-in-out;
+}
+
+.sidebar.collapsed .nav-item .nav-link {
+  justify-content: center;
+}
+
+.nav-link-icon {
+  margin-right: 0.75rem;
+  font-size: 1.25rem; /* Give icons a consistent size */
+}
+
+.nav-link-name {
+  opacity: 1;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.sidebar.collapsed .nav-link-name {
+  opacity: 0;
+  display: none;
+}
+
+/* Footer section */
+.sidebar-footer {
+  transition: opacity 0.2s ease-in-out;
+  opacity: 1;
+}
+
+.sidebar.collapsed .sidebar-footer {
+  opacity: 0;
+  display: none;
+}
+
+/* Toggle button */
+.sidebar-toggle {
+  margin-top: 1rem;
+  width: 100%;
+}
+
+.sidebar.collapsed .sidebar-toggle {
+  justify-content: center;
+}
+
+/* Main content area */
+.main-content {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+  transition: margin-left 0.3s ease-in-out;
+}
